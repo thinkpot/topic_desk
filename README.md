@@ -30,6 +30,7 @@ app/
 lib/                                   Prisma, JWT/session, plans, Telegram API, analytics, CORS
 public/widget.js                       The embeddable widget (shadow DOM, no dependencies)
 prisma/schema.prisma, seed.mjs         Data model + default plans / first admin
+prisma.config.ts                       Prisma CLI config (schema path, seed command)
 ```
 
 ## How it works
@@ -107,19 +108,43 @@ Since online payments aren't wired up, the admin panel is how customers get onto
 
 The setup wizard walks through all of this and verifies each item before saving.
 
+## Database
+
+**Prisma Postgres in both environments** — the same engine locally and in production, so nothing
+is exercised in dev that differs in prod.
+
+- **Local:** `npx prisma dev` runs a local Prisma Postgres server (no Docker needed).
+- **Production:** a Prisma Postgres database from [console.prisma.io](https://console.prisma.io).
+
+Both hand you a `prisma+postgres://…` connection string for `DATABASE_URL`.
+
+Note the schema relies on Postgres features — three enums, `@db.Date`, `date_trunc` /
+`EXTRACT(EPOCH …)` in the analytics queries, and case-insensitive search — so SQLite is not a
+drop-in alternative (Prisma rejects enums on SQLite outright).
+
 ## Running locally
 
 ```bash
-cp .env.example .env        # fill in DATABASE_URL, JWT_SECRET, APP_URL
-docker compose up -d        # starts local Postgres
 npm install
-npm run prisma:migrate      # creates the schema
+
+npx prisma dev --name topicdesk --detach   # start local Prisma Postgres
+npx prisma dev ls                          # prints DATABASE_URL
+
+cp .env.example .env                       # paste that DATABASE_URL, set JWT_SECRET
+npm run prisma:migrate                     # creates the schema
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=your-password npm run prisma:seed
-npm run dev                 # http://localhost:3000
+npm run dev                                # http://localhost:3000
 ```
 
 The seed creates the Free/Basic/Pro plans, and creates an admin account when `ADMIN_EMAIL` and
 `ADMIN_PASSWORD` are set (re-running it updates that account's password). It's safe to re-run.
+
+Managing the local database server: `npx prisma dev ls` (status and URL), `npx prisma dev stop
+--name topicdesk`, `npx prisma dev rm --name topicdesk` (delete it and its data).
+
+Prisma config lives in [`prisma.config.ts`](prisma.config.ts). Because that file exists, the
+Prisma CLI no longer auto-loads `.env`, so the config imports `dotenv/config` itself — Next.js
+still loads `.env` on its own at runtime.
 
 **Important:** Telegram only delivers webhooks to an **HTTPS** URL. For local development, tunnel
 the app (e.g. `ngrok http 3000`) and set `APP_URL` to the tunnel's HTTPS URL *before* creating a
@@ -128,11 +153,12 @@ chatbot, otherwise `setWebhook` will fail.
 ## Deploying to Vercel (single project)
 
 1. Push this repo and import it into Vercel.
-2. Set environment variables: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN` (optional), and
-   `APP_URL` = your production URL (e.g. `https://your-app.vercel.app`).
-3. Use a serverless-friendly, connection-pooled Postgres (Neon, Supabase, or Vercel Postgres) —
-   API routes run as independent serverless invocations, so a database that handles many short
-   concurrent connections well matters here.
+2. Create a Prisma Postgres database at [console.prisma.io](https://console.prisma.io) and copy
+   its connection string. It's built for serverless: connection pooling is handled for you, which
+   matters here because each API route runs as an independent invocation.
+3. Set environment variables: `DATABASE_URL` (that connection string), `JWT_SECRET`,
+   `JWT_EXPIRES_IN` (optional), and `APP_URL` = your production URL
+   (e.g. `https://your-app.vercel.app`).
 4. Before the first deploy, apply the schema and seed:
    `DATABASE_URL=… npx prisma migrate deploy` then
    `DATABASE_URL=… ADMIN_EMAIL=… ADMIN_PASSWORD=… npx prisma db seed`
