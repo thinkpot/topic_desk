@@ -1,51 +1,153 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { api, apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { formatLimit, formatPriceINR, isUnlimited } from "@/lib/plans";
+import { Alert, Badge, Spinner } from "@/components/ui/primitives";
 
-const plans = [
-  { id: "BASIC", name: "Basic", price: 1000, features: ["1 chatbot", "Up to 3,000 users / month"] },
-  { id: "PRO", name: "Pro", price: 3000, features: ["Unlimited chatbots", "Unlimited users"] },
-];
+interface PublicPlan {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  priceINR: number;
+  maxChatbots: number;
+  maxMonthlyUsers: number;
+  isPaid: boolean;
+}
 
 export default function BillingPage() {
-  const { user } = useAuth();
+  const { user, usage } = useAuth();
+  const [plans, setPlans] = useState<PublicPlan[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get("/plans")
+      .then((res) => setPlans(res.data.plans))
+      .catch((err) => setError(apiErrorMessage(err)));
+  }, []);
+
+  const monthlyLimit = user?.plan.maxMonthlyUsers ?? 0;
+  const monthlyUsed = usage?.monthlyConversations ?? 0;
+  const usagePct = isUnlimited(monthlyLimit)
+    ? 0
+    : Math.min(Math.round((monthlyUsed / Math.max(monthlyLimit, 1)) * 100), 100);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-bold">Billing</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        You are currently on the <strong>{user?.plan}</strong> plan.
-      </p>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {plans.map((plan) => {
-          const isCurrent = user?.plan === plan.id;
-          return (
-            <div key={plan.id} className={`rounded-xl border bg-white p-6 ${isCurrent ? "ring-2 ring-blue-600" : ""}`}>
-              <h3 className="text-lg font-semibold">{plan.name}</h3>
-              <p className="mt-1 text-2xl font-bold">
-                ₹{plan.price}
-                <span className="text-sm font-normal text-gray-500">/month</span>
-              </p>
-              <ul className="mt-4 space-y-1 text-sm text-gray-600">
-                {plan.features.map((f) => (
-                  <li key={f}>• {f}</li>
-                ))}
-              </ul>
-              <button
-                disabled={isCurrent}
-                className="mt-6 w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isCurrent ? "Current plan" : `Upgrade to ${plan.name}`}
-              </button>
-            </div>
-          );
-        })}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[24px] font-semibold tracking-[-0.025em]">Billing</h1>
+        <p className="mt-1 text-[14px] text-ink-2">Your plan and how much of it you&apos;ve used this month.</p>
       </div>
 
-      <p className="mt-6 text-xs text-gray-500">
-        Payment processing is not wired up yet — connect a gateway (e.g. Razorpay) to the &quot;Upgrade&quot; buttons
-        above and update the user&apos;s plan on successful payment.
+      {error && <Alert>{error}</Alert>}
+
+      <section className="surface p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="label-eyebrow">Current plan</p>
+            <p className="mt-1.5 text-[22px] font-semibold tracking-[-0.02em]">{user?.plan.name}</p>
+            <p className="mt-1 text-[14px] text-ink-2">
+              {formatPriceINR(user?.plan.priceINR ?? 0)}
+              {user?.plan.isPaid && " per month"}
+              {user?.planExpiresAt &&
+                ` · renews ${new Date(user.planExpiresAt).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}`}
+            </p>
+          </div>
+          {!user?.plan.isPaid && <Badge tone="warning">Chatbots not included</Badge>}
+        </div>
+
+        <div className="mt-6 grid gap-5 sm:grid-cols-2">
+          <div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] text-ink-2">Visitors this month</span>
+              <span className="metric text-[13px] font-medium">
+                {monthlyUsed.toLocaleString("en-IN")}
+                <span className="text-ink-3"> / {formatLimit(monthlyLimit)}</span>
+              </span>
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-[4px] bg-surface-sunken">
+              <div
+                className="h-full rounded-[4px]"
+                style={{
+                  width: `${
+                    isUnlimited(monthlyLimit) ? 100 : Math.max(usagePct, monthlyUsed > 0 ? 1.5 : 0)
+                  }%`,
+                  background: usagePct >= 90 && !isUnlimited(monthlyLimit) ? "var(--critical)" : "var(--series-1)",
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] text-ink-2">Chatbots</span>
+              <span className="metric text-[13px] font-medium">
+                {usage?.chatbots ?? 0}
+                <span className="text-ink-3"> / {formatLimit(user?.plan.maxChatbots ?? 0)}</span>
+              </span>
+            </div>
+            <div className="mt-2 h-2.5 overflow-hidden rounded-[4px] bg-surface-sunken">
+              <div
+                className="h-full rounded-[4px]"
+                style={{
+                  width: `${
+                    isUnlimited(user?.plan.maxChatbots ?? 0)
+                      ? 100
+                      : Math.min(((usage?.chatbots ?? 0) / Math.max(user?.plan.maxChatbots ?? 1, 1)) * 100, 100)
+                  }%`,
+                  background: "var(--series-1)",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {!plans && !error && <Spinner />}
+
+      {plans && (
+        <div className="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
+          {plans.map((plan) => {
+            const isCurrent = user?.plan.id === plan.id;
+            return (
+              <div key={plan.id} className={`surface p-6 ${isCurrent ? "ring-1 ring-ink" : ""}`}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[17px] font-semibold">{plan.name}</h2>
+                  {isCurrent && <Badge tone="solid">Current</Badge>}
+                </div>
+                <p className="metric mt-2 text-[28px] font-semibold tracking-[-0.03em]">
+                  {formatPriceINR(plan.priceINR)}
+                  {plan.priceINR > 0 && <span className="text-[14px] font-normal text-ink-3">/month</span>}
+                </p>
+                {plan.description && <p className="mt-2 text-[14px] text-ink-2">{plan.description}</p>}
+                <ul className="mt-5 space-y-2.5 text-[14px]">
+                  <li className="flex justify-between border-b border-line pb-2.5">
+                    <span className="text-ink-2">Chatbots</span>
+                    <span className="metric font-medium">{formatLimit(plan.maxChatbots)}</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="text-ink-2">Visitors / month</span>
+                    <span className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</span>
+                  </li>
+                </ul>
+                <button disabled className="btn-secondary mt-6 w-full">
+                  {isCurrent ? "Your current plan" : "Contact us to switch"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-[13px] leading-relaxed text-ink-3">
+        Online payments aren&apos;t connected yet — plan changes are applied by an administrator. Wire up a payment
+        gateway to make these buttons self-serve.
       </p>
     </div>
   );

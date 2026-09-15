@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiErrorMessage } from "@/lib/api";
+import AuthShell from "@/components/AuthShell";
+import { Alert, Field } from "@/components/ui/primitives";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -21,56 +23,62 @@ export default function RegisterPage() {
       await register(name, email, password);
     } catch (err) {
       setError(apiErrorMessage(err));
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm rounded-xl border bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-bold">Create your account</h1>
-        {error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        <div className="mt-4 space-y-3">
+    <AuthShell
+      title="Create your account"
+      subtitle="Set up your first chatbot in a few minutes."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-ink underline underline-offset-2">
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        {error && <Alert>{error}</Alert>}
+        <Field label="Full name">
           <input
             required
-            placeholder="Full name"
+            autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="input"
+            placeholder="Priya Sharma"
           />
+        </Field>
+        <Field label="Work email">
           <input
             type="email"
             required
-            placeholder="Email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="input"
+            placeholder="you@company.com"
           />
+        </Field>
+        <Field label="Password" hint="At least 8 characters.">
           <input
             type="password"
             required
             minLength={8}
-            placeholder="Password (min 8 characters)"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="input"
+            placeholder="••••••••"
           />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-5 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {loading ? "Creating account..." : "Sign up"}
+        </Field>
+        <button type="submit" disabled={loading} className="btn-primary w-full">
+          {loading ? "Creating account…" : "Create account"}
         </button>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-blue-600">
-            Log in
-          </Link>
-        </p>
       </form>
-    </main>
+    </AuthShell>
   );
 }

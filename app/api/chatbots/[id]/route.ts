@@ -1,35 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getUserId, unauthorized } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { telegram } from "@/lib/telegram";
-
-function startOfMonth(): Date {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-async function withStats(chatbotId: string) {
-  const [totalConversations, monthlyConversations, totalMessages] = await Promise.all([
-    prisma.conversation.count({ where: { chatbotId } }),
-    prisma.conversation.count({ where: { chatbotId, createdAt: { gte: startOfMonth() } } }),
-    prisma.message.count({ where: { conversation: { chatbotId } } }),
-  ]);
-  return { totalConversations, monthlyConversations, totalMessages };
-}
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const userId = getUserId(req);
-  if (!userId) return unauthorized();
+  const auth = await requireUser(req);
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
-  const bot = await prisma.chatbot.findFirst({ where: { id, userId } });
+  const bot = await prisma.chatbot.findFirst({ where: { id, userId: auth.user.id } });
   if (!bot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
   const { botToken, webhookSecret, ...safeBot } = bot;
-  return NextResponse.json({ chatbot: safeBot, stats: await withStats(bot.id) });
+  return NextResponse.json({ chatbot: safeBot });
 }
 
 const updateSchema = z.object({
@@ -44,11 +30,11 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const userId = getUserId(req);
-  if (!userId) return unauthorized();
+  const auth = await requireUser(req);
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
-  const bot = await prisma.chatbot.findFirst({ where: { id, userId } });
+  const bot = await prisma.chatbot.findFirst({ where: { id, userId: auth.user.id } });
   if (!bot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
   const parsed = updateSchema.safeParse(await req.json());
@@ -60,11 +46,11 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const userId = getUserId(req);
-  if (!userId) return unauthorized();
+  const auth = await requireUser(req);
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
-  const bot = await prisma.chatbot.findFirst({ where: { id, userId } });
+  const bot = await prisma.chatbot.findFirst({ where: { id, userId: auth.user.id } });
   if (!bot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
   try {

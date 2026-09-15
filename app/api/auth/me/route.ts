@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserId, unauthorized } from "@/lib/auth";
-import { PLAN_LIMITS } from "@/lib/plans";
+import { requireUser, publicUser } from "@/lib/auth";
+import { accountBlockReason } from "@/lib/plans";
 
 export async function GET(req: NextRequest) {
-  const userId = getUserId(req);
-  if (!userId) return unauthorized();
+  const auth = await requireUser(req);
+  if ("response" in auth) return auth.response;
+  const { user } = auth;
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+
+  const [chatbotCount, monthlyConversations] = await Promise.all([
+    prisma.chatbot.count({ where: { userId: user.id } }),
+    prisma.conversation.count({
+      where: { chatbot: { userId: user.id }, createdAt: { gte: monthStart } },
+    }),
+  ]);
 
   return NextResponse.json({
-    user: { id: user.id, name: user.name, email: user.email, plan: user.plan, planExpiresAt: user.planExpiresAt },
-    planLimits: PLAN_LIMITS[user.plan],
+    user: publicUser(user),
+    usage: { chatbots: chatbotCount, monthlyConversations },
+    blockReason: accountBlockReason(user),
   });
 }

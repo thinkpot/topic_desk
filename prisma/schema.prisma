@@ -7,9 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Plan {
-  BASIC
-  PRO
+enum Role {
+  USER
+  ADMIN
 }
 
 enum ConversationStatus {
@@ -23,15 +23,42 @@ enum MessageSender {
   SYSTEM
 }
 
+// Plans live in the database so admins can change pricing and limits without a
+// deploy. "Unlimited" is stored as UNLIMITED (see lib/plans.ts) rather than null
+// so that limit comparisons stay plain numeric ones.
+model Plan {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  description     String?
+  priceINR        Int
+  maxChatbots     Int
+  maxMonthlyUsers Int
+  isPaid          Boolean  @default(true)
+  isPublic        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users User[]
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
   email         String    @unique
   password      String
-  plan          Plan      @default(BASIC)
+  role          Role      @default(USER)
+  planId        String
+  plan          Plan      @relation(fields: [planId], references: [id])
   planExpiresAt DateTime?
+  isSuspended   Boolean   @default(false)
   createdAt     DateTime  @default(now())
-  chatbots      Chatbot[]
+  updatedAt     DateTime  @updatedAt
+
+  chatbots Chatbot[]
+
+  @@index([planId])
 }
 
 model Chatbot {
@@ -39,17 +66,22 @@ model Chatbot {
   name           String
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Publishable key embedded in the customer's page. Identifies the chatbot to
+  // the widget endpoints; allowedDomains is what actually restricts use.
+  apiKey         String   @unique
   botToken       String
   botUsername    String?
   groupChatId    String
-  widgetColor    String   @default("#2563eb")
+  widgetColor    String   @default("#0a0a0a")
   welcomeMessage String   @default("Hi! How can we help you today?")
   isActive       Boolean  @default(true)
   allowedDomains String? // comma separated hostnames, empty = allow any
   webhookSecret  String
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   conversations Conversation[]
+  stats         WidgetStat[]
 
   @@index([userId])
 }
@@ -60,6 +92,7 @@ model Conversation {
   chatbot       Chatbot            @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   visitorId     String
   visitorName   String?
+  pageUrl       String?
   topicId       Int
   status        ConversationStatus @default(OPEN)
   lastMessageAt DateTime           @default(now())
@@ -81,4 +114,19 @@ model Message {
   createdAt      DateTime      @default(now())
 
   @@index([conversationId, createdAt])
+  @@index([createdAt])
+}
+
+// Daily rollup of widget impressions, so "how many people saw the widget" is
+// answerable without storing a row per page view.
+model WidgetStat {
+  id        String   @id @default(cuid())
+  chatbotId String
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  views     Int      @default(0)
+  opens     Int      @default(0)
+
+  @@unique([chatbotId, date])
+  @@index([chatbotId, date])
 }

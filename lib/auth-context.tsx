@@ -1,27 +1,38 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "./api";
+
+export interface UserPlan {
+  id: string;
+  slug: string;
+  name: string;
+  priceINR: number;
+  maxChatbots: number;
+  maxMonthlyUsers: number;
+  isPaid: boolean;
+}
 
 export interface Me {
   id: string;
   name: string;
   email: string;
-  plan: "BASIC" | "PRO";
+  role: "USER" | "ADMIN";
+  isSuspended: boolean;
   planExpiresAt: string | null;
+  plan: UserPlan;
 }
 
-export interface PlanLimits {
-  maxChatbots: number;
-  maxMonthlyUsers: number;
-  priceINR: number;
-  label: string;
+export interface Usage {
+  chatbots: number;
+  monthlyConversations: number;
 }
 
 interface AuthContextValue {
   user: Me | null;
-  planLimits: PlanLimits | null;
+  usage: Usage | null;
+  blockReason: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -33,11 +44,12 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
-  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [blockReason, setBlockReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) {
       setUser(null);
@@ -47,41 +59,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.get("/auth/me");
       setUser(res.data.user);
-      setPlanLimits(res.data.planLimits);
+      setUsage(res.data.usage);
+      setBlockReason(res.data.blockReason);
     } catch {
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
   async function login(email: string, password: string) {
     const res = await api.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
-    router.push("/dashboard");
+    await refresh();
+    router.push(res.data.user.role === "ADMIN" ? "/admin" : "/dashboard");
   }
 
   async function register(name: string, email: string, password: string) {
     const res = await api.post("/auth/register", { name, email, password });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
+    await refresh();
     router.push("/dashboard");
   }
 
   function logout() {
     localStorage.removeItem("token");
     setUser(null);
+    setUsage(null);
     router.push("/login");
   }
 
   return (
-    <AuthContext.Provider value={{ user, planLimits, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, usage, blockReason, loading, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

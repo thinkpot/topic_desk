@@ -2,7 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --plane: #f7f7f5;
+  --surface: #ffffff;
+  --surface-sunken: #f2f1ee;
+  --ink: #0a0a0a;
+  --ink-2: #545454;
+  --ink-3: #8a8a8a;
+  --line: #e6e4e0;
+  --line-strong: #d4d2cd;
+
+  /* Data-viz roles (validated against the #ffffff chart surface) */
+  --series-1: #2a78d6;
+  --funnel-1: #86b6ef;
+  --funnel-2: #5598e7;
+  --funnel-3: #2a78d6;
+  --funnel-4: #1c5cab;
+  --positive: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
 body {
-  color: #111827;
-  background: #f9fafb;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.021em;
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-lg border border-line bg-surface;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium
+      transition-colors disabled:cursor-not-allowed disabled:opacity-40
+      focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-white hover:bg-[#2b2b2b];
+  }
+  .btn-secondary {
+    @apply btn border border-line-strong bg-surface text-ink hover:bg-surface-sunken;
+  }
+  .btn-ghost {
+    @apply btn text-ink-2 hover:bg-surface-sunken hover:text-ink;
+  }
+  .btn-danger {
+    @apply btn border border-line-strong bg-surface text-[color:var(--critical)] hover:bg-[#fdf3f3];
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-[13px];
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-[13px] font-medium text-ink;
+  }
+  .field-hint {
+    @apply mt-1.5 text-[13px] leading-snug text-ink-3;
+  }
+  .input {
+    @apply w-full rounded-md border border-line-strong bg-surface px-3 py-2.5 text-sm text-ink
+      placeholder:text-ink-3 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink;
+  }
+
+  .label-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3;
+  }
+
+  .metric {
+    font-variant-numeric: tabular-nums;
+  }
 }

@@ -4,47 +4,75 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
-const links = [
-  { href: "/dashboard", label: "Chatbots" },
-  { href: "/dashboard/billing", label: "Billing" },
-];
-
 export default function Navbar() {
-  const { user, logout, planLimits } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
+  const isAdminArea = pathname.startsWith("/admin");
+
+  const links = isAdminArea
+    ? [
+        { href: "/admin", label: "Overview", exact: true },
+        { href: "/admin/users", label: "Users" },
+        { href: "/admin/plans", label: "Plans" },
+      ]
+    : [
+        { href: "/dashboard", label: "Overview", exact: true },
+        { href: "/dashboard/chatbots", label: "Chatbots" },
+        { href: "/dashboard/billing", label: "Billing" },
+      ];
+
+  const isCurrent = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
 
   return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-lg font-bold">
-            ChatWidget
-          </Link>
-          <nav className="flex gap-1">
-            {links.map((link) => (
+    <header className="border-b border-line bg-surface">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="flex h-14 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href={isAdminArea ? "/admin" : "/dashboard"} className="text-[16px] font-semibold tracking-[-0.02em]">
+              Topicdesk
+            </Link>
+            {isAdminArea && (
+              <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">Admin</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {user?.role === "ADMIN" && (
               <Link
-                key={link.href}
-                href={link.href}
-                className={`rounded-md px-3 py-2 text-sm font-medium ${
-                  pathname === link.href ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-50"
-                }`}
+                href={isAdminArea ? "/dashboard" : "/admin"}
+                className="hidden text-[13px] font-medium text-ink-2 underline underline-offset-2 hover:text-ink sm:block"
               >
-                {link.label}
+                {isAdminArea ? "My dashboard" : "Admin panel"}
               </Link>
-            ))}
-          </nav>
+            )}
+            {!isAdminArea && user && (
+              <span className="hidden text-[13px] text-ink-2 sm:block">
+                {user.plan.name}
+                {!user.plan.isPaid && " · no chatbots"}
+              </span>
+            )}
+            <span className="hidden text-[13px] text-ink-3 md:block">{user?.email}</span>
+            <button onClick={logout} className="btn-ghost btn-sm">
+              Log out
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          {user && (
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-              {planLimits?.label ?? user.plan} plan
-            </span>
-          )}
-          <span className="text-sm text-gray-600">{user?.email}</span>
-          <button onClick={logout} className="text-sm font-medium text-gray-600 hover:text-gray-900">
-            Log out
-          </button>
-        </div>
+
+        <nav className="-mb-px flex gap-6">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`border-b-2 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${
+                isCurrent(link.href, link.exact)
+                  ? "border-ink text-ink"
+                  : "border-transparent text-ink-3 hover:text-ink"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </header>
   );

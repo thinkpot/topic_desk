@@ -25,8 +25,25 @@ export interface TelegramMe {
   first_name: string;
 }
 
+export interface TelegramChat {
+  id: number;
+  title?: string;
+  type: string;
+  is_forum?: boolean;
+}
+
+export interface TelegramChatMember {
+  status: string;
+  can_manage_topics?: boolean;
+}
+
 export const telegram = {
   getMe: (botToken: string) => call<TelegramMe>(botToken, "getMe"),
+
+  getChat: (botToken: string, chatId: string) => call<TelegramChat>(botToken, "getChat", { chat_id: chatId }),
+
+  getChatMember: (botToken: string, chatId: string, userId: number) =>
+    call<TelegramChatMember>(botToken, "getChatMember", { chat_id: chatId, user_id: userId }),
 
   setWebhook: (botToken: string, url: string, secretToken: string) =>
     call<boolean>(botToken, "setWebhook", {

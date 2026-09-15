@@ -3,10 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
-import { PLAN_LIMITS } from "@/lib/plans";
 import { telegram } from "@/lib/telegram";
+import { resolveWidgetChatbot } from "@/lib/widget";
 
-type RouteContext = { params: Promise<{ chatbotId: string }> };
+type RouteContext = { params: Promise<{ apiKey: string }> };
 
 export async function OPTIONS() {
   return corsPreflight();
@@ -14,25 +14,28 @@ export async function OPTIONS() {
 
 function startOfMonth(): Date {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
+  d.setUTCDate(1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
 }
 
-// Polling endpoint: the widget calls this every couple of seconds while open.
+// Polling endpoint: the widget calls this every few seconds while open.
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const { chatbotId } = await params;
+  const { apiKey } = await params;
   const visitorId = req.nextUrl.searchParams.get("visitorId");
   const after = req.nextUrl.searchParams.get("after");
   if (!visitorId) {
     return withCors(NextResponse.json({ error: "visitorId is required" }, { status: 400 }));
   }
 
-  const bot = await prisma.chatbot.findUnique({ where: { id: chatbotId } });
-  if (!bot || !bot.isActive) {
-    return withCors(NextResponse.json({ error: "Chatbot not found or inactive" }, { status: 404 }));
+  const resolved = await resolveWidgetChatbot(apiKey);
+  if ("error" in resolved) {
+    return withCors(NextResponse.json({ error: resolved.error }, { status: resolved.status }));
   }
+  const { bot } = resolved;
 
   const conversation = await prisma.conversation.findUnique({
-    where: { chatbotId_visitorId: { chatbotId, visitorId } },
+    where: { chatbotId_visitorId: { chatbotId: bot.id, visitorId } },
   });
 
   if (!conversation) {
@@ -58,62 +61,75 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 const sendSchema = z.object({
   visitorId: z.string().min(1).max(200),
   visitorName: z.string().max(200).optional(),
+  pageUrl: z.string().max(500).optional(),
   text: z.string().min(1).max(2000),
 });
 
 // Sends a visitor message; creates the conversation (and its Telegram topic) on first contact.
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const { chatbotId } = await params;
+  const { apiKey } = await params;
   const parsed = sendSchema.safeParse(await req.json());
   if (!parsed.success) {
     return withCors(NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 }));
   }
-  const { visitorId, visitorName, text } = parsed.data;
+  const { visitorId, visitorName, pageUrl, text } = parsed.data;
 
-  const bot = await prisma.chatbot.findUnique({ where: { id: chatbotId }, include: { user: true } });
-  if (!bot || !bot.isActive) {
-    return withCors(NextResponse.json({ error: "This chatbot is not available" }, { status: 404 }));
+  const resolved = await resolveWidgetChatbot(apiKey);
+  if ("error" in resolved) {
+    return withCors(NextResponse.json({ error: resolved.error }, { status: resolved.status }));
   }
+  const { bot } = resolved;
 
-  const origin = req.headers.get("origin");
-  if (!isDomainAllowed(bot.allowedDomains, origin)) {
-    return withCors(NextResponse.json({ error: "This website is not authorized to use this chatbot" }, { status: 403 }));
+  if (!isDomainAllowed(bot.allowedDomains, req.headers.get("origin"))) {
+    return withCors(
+      NextResponse.json({ error: "This website is not authorized to use this chatbot" }, { status: 403 })
+    );
   }
 
   let conversation = await prisma.conversation.findUnique({
-    where: { chatbotId_visitorId: { chatbotId, visitorId } },
+    where: { chatbotId_visitorId: { chatbotId: bot.id, visitorId } },
   });
 
   if (!conversation) {
-    const limits = PLAN_LIMITS[bot.user.plan];
     const monthlyCount = await prisma.conversation.count({
-      where: { chatbotId, createdAt: { gte: startOfMonth() } },
+      where: { chatbot: { userId: bot.userId }, createdAt: { gte: startOfMonth() } },
     });
-    if (monthlyCount >= limits.maxMonthlyUsers) {
+    if (monthlyCount >= bot.user.plan.maxMonthlyUsers) {
       return withCors(
         NextResponse.json(
-          { error: "This chatbot has reached its monthly user limit. Please try again later." },
+          { error: "This chat has reached its monthly limit. Please try again later." },
           { status: 403 }
         )
       );
     }
 
-    const topicName = `${visitorName?.trim() || "Visitor"} · ${visitorId.slice(0, 8)}`;
+    const topicName = `${visitorName?.trim() || "Visitor"} · ${visitorId.slice(-6)}`;
     let topic;
     try {
       topic = await telegram.createForumTopic(bot.botToken, bot.groupChatId, topicName);
     } catch {
-      return withCors(NextResponse.json({ error: "Chat is temporarily unavailable, please try again shortly." }, { status: 503 }));
+      return withCors(
+        NextResponse.json({ error: "Chat is temporarily unavailable, please try again shortly." }, { status: 503 })
+      );
     }
 
     conversation = await prisma.conversation.create({
       data: {
-        chatbotId,
+        chatbotId: bot.id,
         visitorId,
         visitorName: visitorName?.trim() || undefined,
+        pageUrl: pageUrl || undefined,
         topicId: topic.message_thread_id,
       },
     });
+
+    if (pageUrl) {
+      try {
+        await telegram.sendMessage(bot.botToken, bot.groupChatId, `New chat from ${pageUrl}`, topic.message_thread_id);
+      } catch {
+        // context line is a nicety; never block the actual message on it
+      }
+    }
   }
 
   const message = await prisma.message.create({
