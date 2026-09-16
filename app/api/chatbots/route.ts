@@ -44,10 +44,6 @@ const createSchema = z.object({
   botToken: z.string().min(20),
   groupChatId: z.string().min(1),
   welcomeMessage: z.string().max(500).optional(),
-  widgetColor: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .optional(),
   allowedDomains: z.string().max(1000).optional(),
 });
 
@@ -72,7 +68,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, botToken, groupChatId, welcomeMessage, widgetColor, allowedDomains } = parsed.data;
+  const { name, botToken, groupChatId, welcomeMessage, allowedDomains } = parsed.data;
 
   // A chatbot without a webhook never receives replies, so refuse up front
   // rather than saving one that can't work.
@@ -106,7 +102,6 @@ export async function POST(req: NextRequest) {
       botUsername: connection.botUsername,
       groupChatId,
       welcomeMessage: welcomeMessage ?? undefined,
-      widgetColor: widgetColor ?? undefined,
       allowedDomains: allowedDomains ?? undefined,
       webhookSecret,
     },

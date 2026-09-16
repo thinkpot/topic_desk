@@ -23,7 +23,26 @@
   var pollTimer = null;
   var pollInFlight = false;
   var renderedIds = Object.create(null);
-  var config = { name: "Chat with us", welcomeMessage: "Hi! How can we help you today?", widgetColor: "#0a0a0a" };
+
+  // Matches the "Daylight" theme in lib/widget-appearance.ts — shown until
+  // /config resolves the chatbot's actual theme, and if that call fails.
+  var DEFAULT_COLORS = {
+    accent: "#0a0a0a",
+    accentText: "#ffffff",
+    surface: "#ffffff",
+    messageArea: "#f7f7f5",
+    agentBubbleBg: "#ffffff",
+    agentBubbleBorder: "#e6e4e0",
+    agentBubbleText: "#0a0a0a",
+    inputBg: "#ffffff",
+    inputBorder: "#d4d2cd",
+    inputText: "#0a0a0a",
+    mutedText: "#8a8a8a",
+  };
+  var DEFAULT_FONT_STACK = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+
+  var config = { name: "Chat with us", welcomeMessage: "Hi! How can we help you today?" };
+  var colors = DEFAULT_COLORS;
 
   // ISO 8601 timestamps (always UTC "Z" from the server) sort correctly as
   // plain strings, so this avoids Date parsing just to pick the later one.
@@ -64,8 +83,6 @@
     return e;
   }
 
-  var FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-
   // The widget lives in a shadow root so the host page's CSS (its `p {}`,
   // `button {}`, resets, etc.) can't reach in and restyle it.
   var host = el("div", { id: "td-host" });
@@ -75,7 +92,7 @@
     id: "td-root",
     style:
       "position:fixed;bottom:20px;right:20px;z-index:2147483000;font-family:" +
-      FONT +
+      DEFAULT_FONT_STACK +
       ";line-height:1.45;color:#0a0a0a;font-size:14px;box-sizing:border-box;",
   });
   shadow.appendChild(root);
@@ -140,15 +157,14 @@
     "aria-label": "Message",
     placeholder: "Write a message…",
     style:
-      "flex:1;border:1px solid #d4d2cd;border-radius:8px;padding:10px 12px;font-size:14px;font-family:" +
-      FONT +
-      ";outline:none;color:#0a0a0a;background:#fff;",
+      "flex:1;border:1px solid #d4d2cd;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;" +
+      "outline:none;color:#0a0a0a;background:#fff;",
   });
   input.addEventListener("focus", function () {
-    input.style.borderColor = "#0a0a0a";
+    input.style.borderColor = colors.accent;
   });
   input.addEventListener("blur", function () {
-    input.style.borderColor = "#d4d2cd";
+    input.style.borderColor = colors.inputBorder;
   });
 
   var sendBtn = el("button", {
@@ -192,10 +208,36 @@
     mount();
   }
 
-  function applyColor(color) {
-    bubble.style.background = color;
-    header.style.background = color;
-    sendBtn.style.background = color;
+  function applyTheme(c) {
+    colors = c;
+    bubble.style.background = c.accent;
+    bubble.style.color = c.accentText;
+    header.style.background = c.accent;
+    headerTitle.style.color = c.accentText;
+    headerSub.style.color = c.accentText;
+    closeBtn.style.color = c.accentText;
+    // A few themes pair a light accent with dark accentText (e.g. Obsidian) —
+    // a white overlay would nearly vanish on that light a header.
+    closeBtn.style.background = c.accentText === "#0a0a0a" ? "rgba(10,10,10,.08)" : "rgba(255,255,255,.14)";
+    messagesEl.style.background = c.messageArea;
+    statusEl.style.background = c.messageArea;
+    statusEl.style.color = c.mutedText;
+    input.style.background = c.inputBg;
+    input.style.borderColor = c.inputBorder;
+    input.style.color = c.inputText;
+    sendBtn.style.background = c.accent;
+    sendBtn.style.color = c.accentText;
+    inputRow.style.background = c.surface;
+    inputRow.style.borderTopColor = c.agentBubbleBorder;
+    footer.style.background = c.surface;
+    footer.style.color = c.mutedText;
+    panel.style.borderColor = c.agentBubbleBorder;
+    panel.style.background = c.surface;
+  }
+
+  function applyFont(stack, url) {
+    root.style.fontFamily = stack;
+    if (url) shadow.appendChild(el("link", { rel: "stylesheet", href: url }));
   }
 
   function setStatus(text) {
@@ -216,8 +258,14 @@
         style:
           "max-width:82%;padding:9px 12px;font-size:14px;white-space:pre-wrap;word-break:break-word;border-radius:12px;" +
           (mine
-            ? "align-self:flex-end;border-bottom-right-radius:4px;color:#fff;background:" + config.widgetColor + ";"
-            : "align-self:flex-start;border-bottom-left-radius:4px;background:#fff;border:1px solid #e6e4e0;"),
+            ? "align-self:flex-end;border-bottom-right-radius:4px;color:" + colors.accentText + ";background:" + colors.accent + ";"
+            : "align-self:flex-start;border-bottom-left-radius:4px;color:" +
+              colors.agentBubbleText +
+              ";background:" +
+              colors.agentBubbleBg +
+              ";border:1px solid " +
+              colors.agentBubbleBorder +
+              ";"),
       },
       [text]
     );
@@ -351,7 +399,8 @@
     .then(function (cfg) {
       config = cfg;
       headerTitle.textContent = cfg.name;
-      applyColor(cfg.widgetColor || "#0a0a0a");
+      applyTheme(cfg.colors || DEFAULT_COLORS);
+      applyFont(cfg.fontStack || DEFAULT_FONT_STACK, cfg.fontUrl);
 
       try {
         if (!sessionStorage.getItem(SESSION_KEY)) {

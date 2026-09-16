@@ -8,6 +8,7 @@ import type { Analytics } from "@/lib/analytics";
 import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
 import TelegramConnection from "@/components/TelegramConnection";
+import ThemeFontPicker from "@/components/ThemeFontPicker";
 import { Alert, Badge, CodeBlock, CopyButton, Field, Modal, Spinner, StatTile, Toggle } from "@/components/ui/primitives";
 
 interface Chatbot {
@@ -17,7 +18,8 @@ interface Chatbot {
   botUsername: string | null;
   isActive: boolean;
   welcomeMessage: string;
-  widgetColor: string;
+  widgetTheme: string;
+  widgetFont: string;
   allowedDomains: string | null;
 }
 
@@ -257,19 +259,21 @@ export default function ChatbotDetailPage() {
                 />
               </Field>
 
-              <Field label="Accent colour" hint="Used for the chat bubble and your visitors' messages.">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    defaultValue={bot.widgetColor}
-                    onBlur={(e) => e.target.value !== bot.widgetColor && save({ widgetColor: e.target.value })}
-                    className="h-10 w-16 cursor-pointer rounded-md border border-line-strong bg-surface p-1"
-                  />
-                  <span className="metric text-[13px] text-ink-3">{bot.widgetColor}</span>
-                </div>
-              </Field>
-
               {savedAt && <p className="text-[13px] text-ink-3">Saved.</p>}
+            </div>
+          </section>
+
+          <section className="surface p-5">
+            <h2 className="text-[15px] font-medium">Appearance</h2>
+            <p className="mt-0.5 text-[13px] text-ink-2">
+              Choose a theme and font for the chat window. Changes apply immediately for new visitors.
+            </p>
+            <div className="mt-5">
+              <ThemeFontPicker
+                themeKey={bot.widgetTheme}
+                fontKey={bot.widgetFont}
+                onChange={(next) => save(next)}
+              />
             </div>
           </section>
 

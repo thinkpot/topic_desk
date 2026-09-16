@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { telegram } from "@/lib/telegram";
+import { WIDGET_THEME_KEYS, WIDGET_FONT_KEYS } from "@/lib/widget-appearance";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,10 +22,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   welcomeMessage: z.string().max(500).optional(),
-  widgetColor: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .optional(),
+  widgetTheme: z.enum(WIDGET_THEME_KEYS).optional(),
+  widgetFont: z.enum(WIDGET_FONT_KEYS).optional(),
   allowedDomains: z.string().max(1000).optional(),
   isActive: z.boolean().optional(),
 });

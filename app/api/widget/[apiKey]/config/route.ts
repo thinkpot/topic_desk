@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { resolveWidgetChatbot } from "@/lib/widget";
+import { getTheme, getFont, googleFontUrl } from "@/lib/widget-appearance";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
 
@@ -24,11 +25,17 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     );
   }
 
+  const theme = getTheme(bot.widgetTheme);
+  const font = getFont(bot.widgetFont);
+  const { key: _themeKey, label: _themeLabel, mode: _mode, ...colors } = theme;
+
   return withCors(
     NextResponse.json({
       name: bot.name,
       welcomeMessage: bot.welcomeMessage,
-      widgetColor: bot.widgetColor,
+      colors,
+      fontStack: font.stack,
+      fontUrl: googleFontUrl(font),
     })
   );
 }
