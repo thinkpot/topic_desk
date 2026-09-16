@@ -139,8 +139,13 @@ npm run dev                                # http://localhost:3000
 The seed creates the Free/Basic/Pro plans, and creates an admin account when `ADMIN_EMAIL` and
 `ADMIN_PASSWORD` are set (re-running it updates that account's password). It's safe to re-run.
 
-Managing the local database server: `npx prisma dev ls` (status and URL), `npx prisma dev stop
---name topicdesk`, `npx prisma dev rm --name topicdesk` (delete it and its data).
+The local database server does **not** survive a reboot or sleep. `npm run dev` starts it for you
+(it's a no-op if already running), but if you run the app another way (`npm start`) and see
+`P5010 Cannot fetch data from service: fetch failed`, the server is down — run `npm run db:start`.
+Its data and URL persist across restarts.
+
+Managing the local database server: `npm run db:start` / `npm run db:stop`, `npx prisma dev ls`
+(status and URL), `npx prisma dev rm --name topicdesk` (delete it and its data).
 
 Prisma config lives in [`prisma.config.ts`](prisma.config.ts). Because that file exists, the
 Prisma CLI no longer auto-loads `.env`, so the config imports `dotenv/config` itself — Next.js

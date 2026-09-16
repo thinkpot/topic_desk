@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run db:start && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "db:start": "prisma dev --name topicdesk --detach",
+    "db:stop": "prisma dev stop --name topicdesk",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
