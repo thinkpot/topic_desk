@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import { formatLimit, formatPriceINR } from "@/lib/plans";
 
 // Rendered per request so the build never needs a database connection.
@@ -195,6 +196,13 @@ export default async function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Dogfooding: talk to visitors of our own marketing site through our own product.
+          The API key is env-driven (set in the deployment's own dashboard) rather than
+          hardcoded, since each deployment has its own database and its own chatbot. */}
+      {env.supportChatbotApiKey && (
+        <script src="/widget.js" data-api-key={env.supportChatbotApiKey} async />
+      )}
     </div>
   );
 }
