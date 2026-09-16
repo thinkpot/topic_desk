@@ -21,7 +21,17 @@
   var openedOnce = false;
   var cursor = null;
   var pollTimer = null;
+  var pollInFlight = false;
+  var renderedIds = Object.create(null);
   var config = { name: "Chat with us", welcomeMessage: "Hi! How can we help you today?", widgetColor: "#0a0a0a" };
+
+  // ISO 8601 timestamps (always UTC "Z" from the server) sort correctly as
+  // plain strings, so this avoids Date parsing just to pick the later one.
+  function newerTimestamp(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    return b > a ? b : a;
+  }
 
   function api(path) {
     return apiBase + "/api/widget/" + encodeURIComponent(apiKey) + path;
@@ -193,7 +203,12 @@
     statusEl.style.display = text ? "block" : "none";
   }
 
-  function addMessage(sender, text) {
+  // `id` dedupes across overlapping polls and the poll vs. the sender's own
+  // request racing each other — both can otherwise deliver the same row.
+  function renderMessage(id, sender, text) {
+    if (id && renderedIds[id]) return;
+    if (id) renderedIds[id] = true;
+
     var mine = sender === "VISITOR";
     var bubbleEl = el(
       "div",
@@ -239,11 +254,11 @@
         setStatus("");
         if (data.messages && data.messages.length) {
           data.messages.forEach(function (m) {
-            addMessage(m.sender, m.text);
+            renderMessage(m.id, m.sender, m.text);
+            cursor = newerTimestamp(cursor, m.createdAt);
           });
-          cursor = data.messages[data.messages.length - 1].createdAt;
         } else {
-          addMessage("AGENT", data.welcomeMessage || config.welcomeMessage);
+          renderMessage("welcome", "AGENT", data.welcomeMessage || config.welcomeMessage);
           cursor = new Date(0).toISOString();
         }
       })
@@ -253,7 +268,8 @@
   }
 
   function pollForReplies() {
-    if (!cursor) return;
+    if (!cursor || pollInFlight) return;
+    pollInFlight = true;
     fetch(api("/messages?visitorId=" + encodeURIComponent(visitorId) + "&after=" + encodeURIComponent(cursor)))
       .then(function (r) {
         return r.json();
@@ -261,13 +277,16 @@
       .then(function (data) {
         if (data.messages && data.messages.length) {
           data.messages.forEach(function (m) {
-            addMessage(m.sender, m.text);
+            renderMessage(m.id, m.sender, m.text);
+            cursor = newerTimestamp(cursor, m.createdAt);
           });
-          cursor = data.messages[data.messages.length - 1].createdAt;
         }
       })
       .catch(function () {
         /* retry on the next tick */
+      })
+      .finally(function () {
+        pollInFlight = false;
       });
   }
 
@@ -286,9 +305,11 @@
     var text = input.value.trim();
     if (!text) return;
     input.value = "";
-    addMessage("VISITOR", text);
     sendBtn.disabled = true;
 
+    // Rendered only once the server confirms and hands back a real id — an
+    // optimistic render here raced the next poll tick and could show this
+    // same message twice (it has no id to dedupe against until this resolves).
     fetch(api("/messages"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -303,7 +324,8 @@
         return r.json();
       })
       .then(function (data) {
-        cursor = data.message.createdAt;
+        renderMessage(data.message.id, data.message.sender, data.message.text);
+        cursor = newerTimestamp(cursor, data.message.createdAt);
         setStatus("");
       })
       .catch(function (err) {

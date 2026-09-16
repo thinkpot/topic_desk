@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     NextResponse.json({
       conversationId: conversation.id,
       welcomeMessage: bot.welcomeMessage,
-      messages: messages.map((m) => ({ sender: m.sender, text: m.text, createdAt: m.createdAt })),
+      messages: messages.map((m) => ({ id: m.id, sender: m.sender, text: m.text, createdAt: m.createdAt })),
     })
   );
 }
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   return withCors(
     NextResponse.json({
       conversationId: conversation.id,
-      message: { sender: message.sender, text: message.text, createdAt: message.createdAt },
+      message: { id: message.id, sender: message.sender, text: message.text, createdAt: message.createdAt },
     })
   );
 }
