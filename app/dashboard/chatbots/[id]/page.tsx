@@ -7,6 +7,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import type { Analytics } from "@/lib/analytics";
 import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
+import TelegramConnection from "@/components/TelegramConnection";
 import { Alert, Badge, CodeBlock, CopyButton, Field, Modal, Spinner, StatTile, Toggle } from "@/components/ui/primitives";
 
 interface Chatbot {
@@ -129,6 +130,8 @@ export default function ChatbotDetailPage() {
         </Alert>
       )}
       {error && <Alert>{error}</Alert>}
+
+      <TelegramConnection chatbotId={bot.id} />
 
       <div className="flex gap-1 border-b border-line">
         {TABS.map((t) => (

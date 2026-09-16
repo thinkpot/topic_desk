@@ -1,0 +1,40 @@
+import { env } from "./env";
+import { telegram, TelegramApiError } from "./telegram";
+
+export function webhookUrlFor(chatbotId: string): string {
+  return `${env.appUrl}/api/telegram/webhook/${chatbotId}`;
+}
+
+/**
+ * Telegram only delivers webhooks to public HTTPS URLs, so a localhost or plain
+ * http APP_URL can never work. Returns a human-readable reason, or null if OK.
+ */
+export function appUrlProblem(): string | null {
+  let url: URL;
+  try {
+    url = new URL(env.appUrl);
+  } catch {
+    return "APP_URL is not a valid URL.";
+  }
+  if (url.protocol !== "https:") {
+    return `Telegram can only send replies to a public HTTPS address, but APP_URL is "${env.appUrl}". Locally, run a tunnel (e.g. \`ngrok http 3000\`), set APP_URL to its https URL, and restart the app.`;
+  }
+  if (["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(url.hostname)) {
+    return `APP_URL "${env.appUrl}" isn't reachable from Telegram's servers. Use a public HTTPS URL, e.g. from \`ngrok http 3000\`.`;
+  }
+  return null;
+}
+
+export async function registerWebhook(
+  chatbot: { id: string; botToken: string; webhookSecret: string }
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const problem = appUrlProblem();
+  if (problem) return { ok: false, error: problem };
+  try {
+    await telegram.setWebhook(chatbot.botToken, webhookUrlFor(chatbot.id), chatbot.webhookSecret);
+    return { ok: true };
+  } catch (err) {
+    const detail = err instanceof TelegramApiError ? err.description : "Unexpected error talking to Telegram";
+    return { ok: false, error: `Telegram rejected the webhook: ${detail}` };
+  }
+}

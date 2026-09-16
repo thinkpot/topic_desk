@@ -54,7 +54,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   if (!bot) return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
 
   try {
-    await telegram.deleteWebhook(bot.botToken);
+    // Only clear the webhook if it's ours — another chatbot may now own this bot.
+    const info = await telegram.getWebhookInfo(bot.botToken);
+    if (info.url.endsWith(`/api/telegram/webhook/${bot.id}`)) await telegram.deleteWebhook(bot.botToken);
   } catch {
     // non-fatal, continue with deletion
   }

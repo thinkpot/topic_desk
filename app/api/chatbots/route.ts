@@ -4,9 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { accountBlockReason, formatLimit } from "@/lib/plans";
 import { generateApiKey, generateWebhookSecret } from "@/lib/keys";
-import { telegram, TelegramApiError } from "@/lib/telegram";
 import { verifyConnection } from "@/lib/verify-connection";
-import { env } from "@/lib/env";
+import { appUrlProblem, registerWebhook } from "@/lib/webhook";
 
 function startOfMonth(): Date {
   const d = new Date();
@@ -75,6 +74,19 @@ export async function POST(req: NextRequest) {
 
   const { name, botToken, groupChatId, welcomeMessage, widgetColor, allowedDomains } = parsed.data;
 
+  // A chatbot without a webhook never receives replies, so refuse up front
+  // rather than saving one that can't work.
+  const serverProblem = appUrlProblem();
+  if (serverProblem) return NextResponse.json({ error: serverProblem }, { status: 503 });
+
+  const tokenInUse = await prisma.chatbot.findFirst({ where: { botToken }, select: { id: true } });
+  if (tokenInUse) {
+    return NextResponse.json(
+      { error: "This Telegram bot is already connected to a chatbot. Each chatbot needs its own bot from @BotFather." },
+      { status: 409 }
+    );
+  }
+
   const connection = await verifyConnection(botToken, groupChatId);
   if (!connection.ok) {
     const firstProblem = connection.checks.find((c) => !c.ok);
@@ -101,17 +113,12 @@ export async function POST(req: NextRequest) {
   });
   const { botToken: _token, webhookSecret: _secret, ...safeBot } = bot;
 
-  try {
-    await telegram.setWebhook(botToken, `${env.appUrl}/api/telegram/webhook/${bot.id}`, webhookSecret);
-  } catch (err) {
-    const message = err instanceof TelegramApiError ? err.description : "Unknown error";
-    return NextResponse.json(
-      {
-        error: `Chatbot saved, but Telegram couldn't reach this server to deliver replies: ${message}`,
-        chatbot: safeBot,
-      },
-      { status: 400 }
-    );
+  // The webhook URL embeds the new id, so it can only be registered after the
+  // insert; roll the row back if Telegram refuses so a retry starts clean.
+  const webhook = await registerWebhook(bot);
+  if (!webhook.ok) {
+    await prisma.chatbot.delete({ where: { id: bot.id } });
+    return NextResponse.json({ error: webhook.error }, { status: 502 });
   }
 
   return NextResponse.json({ chatbot: safeBot }, { status: 201 });

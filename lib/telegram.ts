@@ -37,6 +37,13 @@ export interface TelegramChatMember {
   can_manage_topics?: boolean;
 }
 
+export interface TelegramWebhookInfo {
+  url: string;
+  pending_update_count: number;
+  last_error_date?: number;
+  last_error_message?: string;
+}
+
 export const telegram = {
   getMe: (botToken: string) => call<TelegramMe>(botToken, "getMe"),
 
@@ -53,6 +60,8 @@ export const telegram = {
     }),
 
   deleteWebhook: (botToken: string) => call<boolean>(botToken, "deleteWebhook"),
+
+  getWebhookInfo: (botToken: string) => call<TelegramWebhookInfo>(botToken, "getWebhookInfo"),
 
   // Group must be a supergroup with "Topics" enabled, and the bot must be an admin
   // with the "Manage Topics" permission.
