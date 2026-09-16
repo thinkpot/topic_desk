@@ -272,7 +272,7 @@ export default function ChatbotDetailPage() {
               <ThemeFontPicker
                 themeKey={bot.widgetTheme}
                 fontKey={bot.widgetFont}
-                onChange={(next) => save(next)}
+                onSave={(next) => save(next)}
               />
             </div>
           </section>
