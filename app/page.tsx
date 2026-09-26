@@ -74,6 +74,38 @@ const PRODUCTIVITY_BENEFITS = [
   },
 ];
 
+const LIVE_ANALYTICS_CARDS = [
+  {
+    title: "Real-time presence",
+    body: "Pushed over WebSockets the instant a visitor lands or leaves — no polling, no refresh button.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+      </svg>
+    ),
+  },
+  {
+    title: "Page & scroll tracking",
+    body: "Current page, scroll depth, referrer, and recent browsing path for every visitor on your site right now.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M3 9h18M8 4v5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Message them first",
+    body: "On Premium, reach out to a visitor who's still just browsing — straight from the dashboard, before they've said a word.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+        <path d="M4 4h16v12H8l-4 4V4z" />
+      </svg>
+    ),
+  },
+];
+
 const FEATURES = [
   {
     icon: "🔀",
@@ -266,6 +298,55 @@ export default async function Home() {
               Create an account →
             </Link>
             <p className="mt-3 text-[13px] text-white/50">Setup takes about five minutes. No credit card required.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Live analytics showcase */}
+      <section className="relative overflow-hidden bg-[#0a0a0f] py-24">
+        <div className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-[#4ade80] opacity-10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-[#6d4aff] opacity-15 blur-3xl" />
+
+        <div className="relative mx-auto max-w-6xl px-6">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <h2 className="text-[32px] font-bold leading-tight tracking-[-0.025em] text-white sm:text-[40px]">
+              See every visitor,{" "}
+              <span className="bg-gradient-to-r from-[#4ade80] to-[#6d4aff] bg-clip-text text-transparent">
+                the moment they arrive
+              </span>
+            </h2>
+            <p className="text-[15.5px] leading-relaxed text-white/60">
+              Everyone currently browsing a site with your widget installed, updated in real time — current page,
+              scroll depth, and recent path, whether or not they've said a word.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              <span className="ml-2 text-[12px] text-ink-3">Live visitors</span>
+            </div>
+            <Image
+              src="/live_analytics.png"
+              alt="The Live tab: a visitor's current page, scroll depth, recent path, and conversation transcript"
+              width={3468}
+              height={2056}
+              className="w-full"
+            />
+          </div>
+
+          <div className="mx-auto mt-14 grid max-w-5xl gap-5 sm:grid-cols-3">
+            {LIVE_ANALYTICS_CARDS.map((c) => (
+              <div key={c.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-white/[0.06] text-[#8ee6a8]">
+                  {c.icon}
+                </span>
+                <h3 className="mt-4 text-[16px] font-semibold text-white">{c.title}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-white/55">{c.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
