@@ -225,6 +225,51 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Flow builder showcase */}
+      <section className="relative overflow-hidden bg-[#0a0a0f] py-24">
+        <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-[#6d4aff] opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-[#ff8a65] opacity-15 blur-3xl" />
+
+        <div className="relative mx-auto max-w-6xl px-6 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[#a78bfa]">
+            No code, drag &amp; drop
+          </p>
+          <h2 className="mt-4 text-[30px] font-bold tracking-[-0.025em] text-white sm:text-[36px]">
+            Build your bot&apos;s flow, visually
+          </h2>
+          <p className="mx-auto mt-3 max-w-lg text-[15.5px] leading-relaxed text-white/60">
+            Greet a visitor, ask a question, branch on the answer, hand off to a human — wire it all up on a canvas,
+            no code required.
+          </p>
+
+          <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              <span className="ml-2 text-[12px] text-ink-3">Flow builder</span>
+            </div>
+            <Image
+              src="/flowbuilder.png"
+              alt="The flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
+              width={3500}
+              height={2058}
+              className="w-full"
+            />
+          </div>
+
+          <div className="mt-10">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8f7ff2] to-[#ff8a65] px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition-transform hover:scale-[1.02]"
+            >
+              Create an account →
+            </Link>
+            <p className="mt-3 text-[13px] text-white/50">Setup takes about five minutes. No credit card required.</p>
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 py-20">
         <p className="label-eyebrow">Setup</p>
