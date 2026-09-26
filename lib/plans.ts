@@ -50,7 +50,9 @@ export function accountBlockReason(account: AccountState): string | null {
   if (account.isSuspended) return "This account has been suspended.";
   if (!account.plan.isPaid) return "Your current plan doesn't include chatbots. Upgrade to get started.";
   if (account.planExpiresAt && new Date(account.planExpiresAt) < new Date()) {
-    return "Your plan has expired. Renew it to keep your chatbots running.";
+    return account.plan.slug === "free"
+      ? "Your 3-day free trial has ended. Upgrade to keep using your chatbots."
+      : "Your plan has expired. Renew it to keep your chatbots running.";
   }
   return null;
 }

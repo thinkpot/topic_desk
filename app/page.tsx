@@ -201,7 +201,7 @@ export default async function Home() {
               Log in
             </Link>
             <Link href="/register" className="btn-primary btn-sm">
-              Get started
+              Get started free
             </Link>
           </div>
         </div>

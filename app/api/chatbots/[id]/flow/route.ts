@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -12,7 +12,7 @@ const DEFAULT_GRAPH = {
 };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 
@@ -47,7 +47,7 @@ const saveSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 

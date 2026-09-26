@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { emitChatMessageToWidget } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ liveVisitorId: string }> };
@@ -14,7 +14,7 @@ const schema = z.object({ text: z.string().min(1).max(2000) });
 // already polls, so no widget-side delivery code is needed beyond the
 // heartbeat's unread check.
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { liveVisitorId } = await params;
 

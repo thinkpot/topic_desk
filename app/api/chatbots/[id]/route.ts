@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { telegram } from "@/lib/telegram";
 import { WIDGET_THEME_KEYS, WIDGET_FONT_KEYS } from "@/lib/widget-appearance";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 
@@ -33,7 +33,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 
@@ -53,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 

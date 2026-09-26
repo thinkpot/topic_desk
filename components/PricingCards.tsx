@@ -43,7 +43,7 @@ export default function PricingCards({ plans }: { plans: PricingPlan[] }) {
         </button>
       </div>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:max-w-4xl lg:grid-cols-3">
+      <div className="mt-8 grid max-w-4xl gap-5 sm:grid-cols-3">
         {plans.map((plan, i) => {
           const discount = yearlyDiscountPercent(plan.priceINR, plan.priceYearlyINR);
           const showYearly = yearly && plan.priceYearlyINR > 0;

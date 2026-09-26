@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { liveSince } from "@/lib/presence";
 import { visitorLabel } from "@/lib/live-visitor-view";
 
@@ -9,7 +9,7 @@ import { visitorLabel } from "@/lib/live-visitor-view";
 // the real number, so the dashboard can show "provides an upsell banner
 // (\"37 live, showing top 10\") without leaking the extra rows themselves.
 export async function GET(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { user } = auth;
 

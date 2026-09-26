@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { accountBlockReason } from "@/lib/plans";
 import { generateApiKey } from "@/lib/keys";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { id } = await params;
 

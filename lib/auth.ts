@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { verifyToken } from "./jwt";
 import { prisma } from "./prisma";
+import { accountBlockReason } from "./plans";
 
 export type SessionUser = Prisma.UserGetPayload<{ include: { plan: true } }>;
 
@@ -36,6 +37,21 @@ export async function requireUser(req: NextRequest): Promise<{ user: SessionUser
   if (!user) return { response: unauthorized() };
   if (user.isSuspended) return { response: forbidden("This account has been suspended.") };
   return { user };
+}
+
+/**
+ * Same as requireUser, but also refuses a blocked account (suspended, unpaid
+ * tier, or an expired trial/plan) — for endpoints that actually serve
+ * chatbot/analytics data. Deliberately not applied to /auth/me or /plans,
+ * since the dashboard needs those to keep working even while blocked (it's
+ * how the frontend learns *why* it's blocked and what to do about it).
+ */
+export async function requireActiveUser(req: NextRequest): Promise<{ user: SessionUser } | { response: NextResponse }> {
+  const result = await requireUser(req);
+  if ("response" in result) return result;
+  const blocked = accountBlockReason(result.user);
+  if (blocked) return { response: NextResponse.json({ error: blocked, blocked: true }, { status: 403 }) };
+  return result;
 }
 
 export async function requireAdmin(req: NextRequest): Promise<{ user: SessionUser } | { response: NextResponse }> {

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ liveVisitorId: string }> };
 
 // Detail pane for one live visitor: their recent page path plus the full
 // conversation transcript, if they've started one.
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { liveVisitorId } = await params;
 

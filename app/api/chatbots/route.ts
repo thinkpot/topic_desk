@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { accountBlockReason, formatLimit } from "@/lib/plans";
 import { generateApiKey, generateWebhookSecret } from "@/lib/keys";
 import { verifyConnection } from "@/lib/verify-connection";
@@ -15,7 +15,7 @@ function startOfMonth(): Date {
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
 
   const chatbots = await prisma.chatbot.findMany({
@@ -48,7 +48,7 @@ const createSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
   const { user } = auth;
 

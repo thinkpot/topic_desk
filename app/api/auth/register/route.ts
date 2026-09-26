@@ -26,7 +26,15 @@ export async function POST(req: NextRequest) {
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, email, password: hashed, planId: freePlan.id },
+    data: {
+      name,
+      email,
+      password: hashed,
+      planId: freePlan.id,
+      // Free is a 3-day trial, not a permanent tier — accountBlockReason()
+      // locks the account out once this passes, until an admin upgrades them.
+      planExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    },
     include: { plan: true },
   });
 

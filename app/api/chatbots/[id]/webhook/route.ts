@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { telegram, TelegramApiError } from "@/lib/telegram";
 import { appUrlProblem, registerWebhook, webhookUrlFor } from "@/lib/webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 async function loadOwnedBot(req: NextRequest, params: RouteContext["params"]) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return { response: auth.response };
   const { id } = await params;
   const bot = await prisma.chatbot.findFirst({ where: { id, userId: auth.user.id } });

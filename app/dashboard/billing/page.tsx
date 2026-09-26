@@ -55,7 +55,9 @@ export default function BillingPage() {
               {formatPriceINR(user?.plan.priceINR ?? 0)}
               {user?.plan.isPaid && " per month"}
               {user?.planExpiresAt &&
-                ` · renews ${new Date(user.planExpiresAt).toLocaleDateString("en-GB", {
+                ` · ${user.plan.slug === "free" ? "trial ends" : "renews"} ${new Date(
+                  user.planExpiresAt
+                ).toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
@@ -139,7 +141,7 @@ export default function BillingPage() {
             </div>
           )}
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:max-w-4xl lg:grid-cols-3">
+          <div className="grid max-w-4xl gap-5 sm:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = user?.plan.id === plan.id;
               const discount = yearlyDiscountPercent(plan.priceINR, plan.priceYearlyINR);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyConnection } from "@/lib/verify-connection";
 import { appUrlProblem } from "@/lib/webhook";
@@ -12,7 +12,7 @@ const schema = z.object({
 
 // Used by the setup wizard to check a Telegram group before anything is saved.
 export async function POST(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
 
   const parsed = schema.safeParse(await req.json());
