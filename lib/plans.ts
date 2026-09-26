@@ -14,6 +14,18 @@ export function formatPriceINR(price: number): string {
   return price === 0 ? "Free" : `₹${price.toLocaleString("en-IN")}`;
 }
 
+/** priceYearlyINR is the total charged per year — this is the equivalent monthly rate to display. */
+export function yearlyMonthlyEquivalent(priceYearlyINR: number): number {
+  return Math.round(priceYearlyINR / 12);
+}
+
+/** % cheaper the yearly plan's monthly-equivalent rate is versus paying monthly. 0 if no yearly price is set. */
+export function yearlyDiscountPercent(priceMonthlyINR: number, priceYearlyINR: number): number {
+  if (priceMonthlyINR <= 0 || priceYearlyINR <= 0) return 0;
+  const equivalentMonthly = priceYearlyINR / 12;
+  return Math.round((1 - equivalentMonthly / priceMonthlyINR) * 100);
+}
+
 export interface AccountPlan {
   id: string;
   slug: string;

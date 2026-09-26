@@ -24,6 +24,7 @@ const planSchema = z.object({
   name: z.string().min(1).max(60),
   description: z.string().max(300).nullable().optional(),
   priceINR: z.number().int().min(0).max(10_000_000),
+  priceYearlyINR: z.number().int().min(0).max(120_000_000),
   maxChatbots: z.number().int().min(0).max(UNLIMITED),
   maxMonthlyUsers: z.number().int().min(0).max(UNLIMITED),
   isPaid: z.boolean(),

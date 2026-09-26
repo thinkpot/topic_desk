@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { formatLimit, formatPriceINR, isUnlimited } from "@/lib/plans";
+import { formatLimit, formatPriceINR, isUnlimited, yearlyDiscountPercent, yearlyMonthlyEquivalent } from "@/lib/plans";
 import { Alert, Badge, Spinner } from "@/components/ui/primitives";
 
 interface PublicPlan {
@@ -12,6 +12,7 @@ interface PublicPlan {
   name: string;
   description: string | null;
   priceINR: number;
+  priceYearlyINR: number;
   maxChatbots: number;
   maxMonthlyUsers: number;
   isPaid: boolean;
@@ -21,6 +22,7 @@ export default function BillingPage() {
   const { user, usage } = useAuth();
   const [plans, setPlans] = useState<PublicPlan[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [yearly, setYearly] = useState(false);
 
   useEffect(() => {
     api
@@ -112,20 +114,54 @@ export default function BillingPage() {
       {!plans && !error && <Spinner />}
 
       {plans && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
-          {plans.map((plan) => {
-            const isCurrent = user?.plan.id === plan.id;
-            return (
-              <div key={plan.id} className={`surface p-6 ${isCurrent ? "ring-1 ring-ink" : ""}`}>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[17px] font-semibold">{plan.name}</h2>
-                  {isCurrent && <Badge tone="solid">Current</Badge>}
-                </div>
-                <p className="metric mt-2 text-[28px] font-semibold tracking-[-0.03em]">
-                  {formatPriceINR(plan.priceINR)}
-                  {plan.priceINR > 0 && <span className="text-[14px] font-normal text-ink-3">/month</span>}
-                </p>
-                {plan.description && <p className="mt-2 text-[14px] text-ink-2">{plan.description}</p>}
+        <div>
+          {plans.some((p) => p.priceYearlyINR > 0) && (
+            <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-line bg-surface-sunken p-1">
+              <button
+                onClick={() => setYearly(false)}
+                className={`rounded-full px-4 py-1.5 text-[13.5px] font-medium transition-colors ${
+                  !yearly ? "bg-ink text-white" : "text-ink-2 hover:text-ink"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setYearly(true)}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13.5px] font-medium transition-colors ${
+                  yearly ? "bg-ink text-white" : "text-ink-2 hover:text-ink"
+                }`}
+              >
+                Yearly
+                <Badge tone="positive">
+                  Save {Math.max(...plans.map((p) => yearlyDiscountPercent(p.priceINR, p.priceYearlyINR)))}%
+                </Badge>
+              </button>
+            </div>
+          )}
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
+            {plans.map((plan) => {
+              const isCurrent = user?.plan.id === plan.id;
+              const discount = yearlyDiscountPercent(plan.priceINR, plan.priceYearlyINR);
+              const showYearly = yearly && plan.priceYearlyINR > 0;
+              const displayPrice = showYearly ? yearlyMonthlyEquivalent(plan.priceYearlyINR) : plan.priceINR;
+              return (
+                <div key={plan.id} className={`surface p-6 ${isCurrent ? "ring-1 ring-ink" : ""}`}>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[17px] font-semibold">{plan.name}</h2>
+                    {isCurrent && <Badge tone="solid">Current</Badge>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                    <p className="metric text-[28px] font-semibold tracking-[-0.03em]">
+                      {formatPriceINR(displayPrice)}
+                      {displayPrice > 0 && <span className="text-[14px] font-normal text-ink-3">/month</span>}
+                    </p>
+                    {showYearly && discount > 0 && <Badge tone="positive">{discount}% off</Badge>}
+                  </div>
+                  {showYearly && (
+                    <p className="mt-0.5 text-[12.5px] text-ink-3">Billed {formatPriceINR(plan.priceYearlyINR)} yearly</p>
+                  )}
+                  {plan.description && <p className="mt-2 text-[14px] text-ink-2">{plan.description}</p>}
                 <ul className="mt-5 space-y-2.5 text-[14px]">
                   <li className="flex justify-between border-b border-line pb-2.5">
                     <span className="text-ink-2">Chatbots</span>
@@ -140,8 +176,9 @@ export default function BillingPage() {
                   {isCurrent ? "Your current plan" : "Contact us to switch"}
                 </button>
               </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
-import { UNLIMITED, formatLimit, formatPriceINR, isUnlimited } from "@/lib/plans";
+import { UNLIMITED, formatLimit, formatPriceINR, isUnlimited, yearlyDiscountPercent } from "@/lib/plans";
 import { Alert, Badge, Field, Modal, Spinner, Toggle } from "@/components/ui/primitives";
 
 interface AdminPlan {
@@ -11,6 +11,7 @@ interface AdminPlan {
   name: string;
   description: string | null;
   priceINR: number;
+  priceYearlyINR: number;
   maxChatbots: number;
   maxMonthlyUsers: number;
   isPaid: boolean;
@@ -26,6 +27,7 @@ interface PlanForm {
   name: string;
   description: string;
   priceINR: string;
+  priceYearlyMonthlyEquivalent: string;
   maxChatbots: string;
   maxMonthlyUsers: string;
   unlimitedChatbots: boolean;
@@ -42,6 +44,7 @@ const BLANK: PlanForm = {
   name: "",
   description: "",
   priceINR: "0",
+  priceYearlyMonthlyEquivalent: "0",
   maxChatbots: "1",
   maxMonthlyUsers: "1000",
   unlimitedChatbots: false,
@@ -59,6 +62,7 @@ function toForm(plan: AdminPlan): PlanForm {
     name: plan.name,
     description: plan.description ?? "",
     priceINR: String(plan.priceINR),
+    priceYearlyMonthlyEquivalent: String(Math.round(plan.priceYearlyINR / 12)),
     maxChatbots: isUnlimited(plan.maxChatbots) ? "1" : String(plan.maxChatbots),
     maxMonthlyUsers: isUnlimited(plan.maxMonthlyUsers) ? "1000" : String(plan.maxMonthlyUsers),
     unlimitedChatbots: isUnlimited(plan.maxChatbots),
@@ -98,6 +102,7 @@ export default function AdminPlansPage() {
       name: form.name,
       description: form.description.trim() || null,
       priceINR: Number(form.priceINR),
+      priceYearlyINR: Number(form.priceYearlyMonthlyEquivalent) * 12,
       maxChatbots: form.unlimitedChatbots ? UNLIMITED : Number(form.maxChatbots),
       maxMonthlyUsers: form.unlimitedUsers ? UNLIMITED : Number(form.maxMonthlyUsers),
       isPaid: form.isPaid,
@@ -183,6 +188,14 @@ export default function AdminPlansPage() {
                 {formatPriceINR(plan.priceINR)}
                 {plan.priceINR > 0 && <span className="text-[13px] font-normal text-ink-3">/month</span>}
               </p>
+              {plan.priceYearlyINR > 0 && (
+                <p className="mt-1 text-[13px] text-ink-2">
+                  {formatPriceINR(Math.round(plan.priceYearlyINR / 12))}/month billed yearly ·{" "}
+                  <span className="font-medium text-positive">
+                    {yearlyDiscountPercent(plan.priceINR, plan.priceYearlyINR)}% off
+                  </span>
+                </p>
+              )}
 
               <dl className="mt-4 space-y-2 border-t border-line pt-3 text-[13px]">
                 <div className="flex justify-between">
@@ -282,7 +295,7 @@ export default function AdminPlansPage() {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Price (₹ / month)">
+            <Field label="Price (₹ / month, billed monthly)">
               <input
                 type="number"
                 min={0}
@@ -292,16 +305,33 @@ export default function AdminPlansPage() {
                 className="input"
               />
             </Field>
-            <Field label="Sort order" hint="Lower numbers show first.">
+            <Field
+              label="Price (₹ / month, billed yearly)"
+              hint={
+                Number(form.priceYearlyMonthlyEquivalent) > 0 && Number(form.priceINR) > 0
+                  ? `${yearlyDiscountPercent(Number(form.priceINR), Number(form.priceYearlyMonthlyEquivalent) * 12)}% cheaper than monthly — charged ${formatPriceINR(Number(form.priceYearlyMonthlyEquivalent) * 12)} once a year.`
+                  : "0 disables the yearly option for this plan."
+              }
+            >
               <input
                 type="number"
                 min={0}
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
+                value={form.priceYearlyMonthlyEquivalent}
+                onChange={(e) => setForm({ ...form, priceYearlyMonthlyEquivalent: e.target.value })}
                 className="input"
               />
             </Field>
           </div>
+
+          <Field label="Sort order" hint="Lower numbers show first.">
+            <input
+              type="number"
+              min={0}
+              value={form.sortOrder}
+              onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
+              className="input w-32"
+            />
+          </Field>
 
           <div className="space-y-3 rounded-md border border-line p-4">
             <div className="flex items-center justify-between gap-4">

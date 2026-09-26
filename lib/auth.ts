@@ -58,6 +58,7 @@ export function publicUser(user: SessionUser) {
       slug: user.plan.slug,
       name: user.plan.name,
       priceINR: user.plan.priceINR,
+      priceYearlyINR: user.plan.priceYearlyINR,
       maxChatbots: user.plan.maxChatbots,
       maxMonthlyUsers: user.plan.maxMonthlyUsers,
       isPaid: user.plan.isPaid,

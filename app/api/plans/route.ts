@@ -12,8 +12,11 @@ export async function GET() {
       name: true,
       description: true,
       priceINR: true,
+      priceYearlyINR: true,
       maxChatbots: true,
       maxMonthlyUsers: true,
+      maxLiveVisitors: true,
+      supportsDashboardChat: true,
       isPaid: true,
     },
   });

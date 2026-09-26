@@ -10,6 +10,7 @@ const updateSchema = z.object({
   name: z.string().min(1).max(60).optional(),
   description: z.string().max(300).nullable().optional(),
   priceINR: z.number().int().min(0).max(10_000_000).optional(),
+  priceYearlyINR: z.number().int().min(0).max(120_000_000).optional(),
   maxChatbots: z.number().int().min(0).max(UNLIMITED).optional(),
   maxMonthlyUsers: z.number().int().min(0).max(UNLIMITED).optional(),
   isPaid: z.boolean().optional(),

@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
-import { formatLimit, formatPriceINR } from "@/lib/plans";
+import PricingCards from "@/components/PricingCards";
 
 // Rendered per request so the build never needs a database connection.
 export const dynamic = "force-dynamic";
@@ -156,7 +156,7 @@ const FAQS = [
   },
   {
     q: "Is there a limit on chatbots or conversations?",
-    a: "Basic includes one chatbot and 3,000 visitor conversations a month. Premium is unlimited on both.",
+    a: "Basic includes one chatbot and 3,000 visitor conversations a month. Premium includes 10 chatbots and 10,000 visitor conversations a month.",
   },
 ];
 
@@ -243,63 +243,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Productivity benefits */}
-      <section className="border-y border-line bg-plane">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="label-eyebrow">Why teams switch</p>
-            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-              Everything you need to run support from Telegram
-            </h2>
-          </div>
-          <div className="mt-14 grid gap-10 sm:grid-cols-3">
-            {PRODUCTIVITY_BENEFITS.map((b) => (
-              <div key={b.title} className="text-center">
-                <div className="mx-auto flex h-32 w-full max-w-[220px] items-center justify-center rounded-xl bg-surface-sunken text-ink-2">
-                  {b.icon}
-                </div>
-                <h3 className="mt-5 text-[17px] font-semibold">{b.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{b.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Flow builder showcase */}
-      <section className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <p className="label-eyebrow">No-code chatbot builder</p>
-        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-          Build a no-code chatbot flow for your website
-        </h2>
-        <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
-          Greet a visitor, ask a qualifying question, branch on the answer, hand off to a human — wire it all up on a
-          canvas, no developer required.
-        </p>
-
-        <div className="surface mx-auto mt-10 max-w-5xl overflow-hidden shadow-card">
-          <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-            <span className="ml-2 text-[12px] text-ink-3">Flow builder</span>
-          </div>
-          <Image
-            src="/flowbuilder.png"
-            alt="The no-code flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
-            width={3500}
-            height={2058}
-            className="w-full"
-          />
-        </div>
-
-        <div className="mt-8">
-          <Link href="/register" className="btn-primary px-6 py-3">
-            Create an account
-          </Link>
-          <p className="mt-3 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
-        </div>
-      </section>
 
       {/* Live analytics showcase */}
       <section className="border-y border-line bg-plane">
@@ -341,6 +284,64 @@ export default async function Home() {
                 </span>
                 <h3 className="mt-4 text-[15.5px] font-semibold">{c.title}</h3>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{c.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Flow builder showcase */}
+      <section className="mx-auto max-w-6xl px-6 py-20 text-center">
+        <p className="label-eyebrow">No-code chatbot builder</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+          Build a no-code chatbot flow for your website
+        </h2>
+        <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
+          Greet a visitor, ask a qualifying question, branch on the answer, hand off to a human — wire it all up on a
+          canvas, no developer required.
+        </p>
+
+        <div className="surface mx-auto mt-10 max-w-5xl overflow-hidden shadow-card">
+          <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="ml-2 text-[12px] text-ink-3">Flow builder</span>
+          </div>
+          <Image
+            src="/flowbuilder.png"
+            alt="The no-code flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
+            width={3500}
+            height={2058}
+            className="w-full"
+          />
+        </div>
+
+        <div className="mt-8">
+          <Link href="/register" className="btn-primary px-6 py-3">
+            Create an account
+          </Link>
+          <p className="mt-3 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
+        </div>
+      </section>
+
+      {/* Productivity benefits */}
+      <section className="border-y border-line bg-plane">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="label-eyebrow">Why teams switch</p>
+            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+              Everything you need to run support from Telegram
+            </h2>
+          </div>
+          <div className="mt-14 grid gap-10 sm:grid-cols-3">
+            {PRODUCTIVITY_BENEFITS.map((b) => (
+              <div key={b.title} className="text-center">
+                <div className="mx-auto flex h-32 w-full max-w-[220px] items-center justify-center rounded-xl bg-surface-sunken text-ink-2">
+                  {b.icon}
+                </div>
+                <h3 className="mt-5 text-[17px] font-semibold">{b.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{b.body}</p>
               </div>
             ))}
           </div>
@@ -428,51 +429,13 @@ export default async function Home() {
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <p className="label-eyebrow">Pricing</p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Simple, per account</h2>
-        <p className="mt-2 text-[15px] text-ink-2">Billed monthly. Cancel whenever you like.</p>
+        <p className="mt-2 text-[15px] text-ink-2">Cancel whenever you like.</p>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
-          {plans.map((plan, i) => (
-            <div key={plan.id} className={`surface p-7 ${i === plans.length - 1 ? "ring-1 ring-ink" : ""}`}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-[17px] font-semibold">{plan.name}</h3>
-                {i === plans.length - 1 && (
-                  <span className="rounded-full bg-ink px-2.5 py-0.5 text-[11px] font-medium text-white">
-                    Most complete
-                  </span>
-                )}
-              </div>
-              <p className="metric mt-3 text-[34px] font-semibold tracking-[-0.03em]">
-                {formatPriceINR(plan.priceINR)}
-                {plan.priceINR > 0 && <span className="text-[15px] font-normal text-ink-3">/month</span>}
-              </p>
-              {plan.description && <p className="mt-2 text-[14px] text-ink-2">{plan.description}</p>}
-              <ul className="mt-6 space-y-2.5 text-[14px]">
-                <li className="flex justify-between border-b border-line pb-2.5">
-                  <span className="text-ink-2">Chatbots</span>
-                  <span className="metric font-medium">{formatLimit(plan.maxChatbots)}</span>
-                </li>
-                <li className="flex justify-between border-b border-line pb-2.5">
-                  <span className="text-ink-2">Visitors / month</span>
-                  <span className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</span>
-                </li>
-                <li className="flex justify-between border-b border-line pb-2.5">
-                  <span className="text-ink-2">Live visitors shown</span>
-                  <span className="metric font-medium">{plan.maxLiveVisitors}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="text-ink-2">Dashboard chat</span>
-                  <span className="font-medium">{plan.supportsDashboardChat ? "Included" : "—"}</span>
-                </li>
-              </ul>
-              <Link href="/register" className="btn-primary mt-7 w-full">
-                Get started
-              </Link>
-            </div>
-          ))}
-          {plans.length === 0 && (
-            <p className="text-sm text-ink-3">Pricing is being updated — please check back shortly.</p>
-          )}
-        </div>
+        {plans.length > 0 ? (
+          <PricingCards plans={plans} />
+        ) : (
+          <p className="mt-10 text-sm text-ink-3">Pricing is being updated — please check back shortly.</p>
+        )}
       </section>
 
       <footer className="border-t border-line">

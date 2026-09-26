@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-const UNLIMITED = 2147483647;
 
 const PLANS = [
   {
@@ -20,7 +19,8 @@ const PLANS = [
     slug: "basic",
     name: "Basic",
     description: "One chatbot for a single website.",
-    priceINR: 1000,
+    priceINR: 499,
+    priceYearlyINR: 399 * 12,
     maxChatbots: 1,
     maxMonthlyUsers: 3000,
     isPaid: true,
@@ -32,10 +32,11 @@ const PLANS = [
   {
     slug: "pro",
     name: "Pro",
-    description: "Unlimited chatbots and unlimited conversations.",
-    priceINR: 3000,
-    maxChatbots: UNLIMITED,
-    maxMonthlyUsers: UNLIMITED,
+    description: "10 chatbots and 10,000 visitor conversations a month.",
+    priceINR: 999,
+    priceYearlyINR: 799 * 12,
+    maxChatbots: 10,
+    maxMonthlyUsers: 10000,
     isPaid: true,
     isPublic: true,
     sortOrder: 2,

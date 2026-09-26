@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Plan" ADD COLUMN     "priceYearlyINR" INTEGER NOT NULL DEFAULT 0;
+

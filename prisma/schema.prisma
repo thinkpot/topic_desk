@@ -40,6 +40,10 @@ model Plan {
   name            String
   description     String?
   priceINR        Int
+  // Total charge for the year when billed annually (not a monthly rate) —
+  // e.g. 4788 for a plan whose monthly-equivalent yearly rate is ₹399. 0 means
+  // no yearly option is offered (the free plan has no billing cycle at all).
+  priceYearlyINR  Int      @default(0)
   maxChatbots     Int
   maxMonthlyUsers Int
   isPaid          Boolean  @default(true)

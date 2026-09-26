@@ -9,6 +9,7 @@ export interface UserPlan {
   slug: string;
   name: string;
   priceINR: number;
+  priceYearlyINR: number;
   maxChatbots: number;
   maxMonthlyUsers: number;
   isPaid: boolean;
