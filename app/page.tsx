@@ -446,22 +446,40 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-6 py-20 text-center">
         <p className="label-eyebrow">Compatibility</p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-          Works with any website builder
+          Works with the platforms you already use
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
-          One script tag, no build step. If you can paste HTML before{" "}
+          One script tag, no plugin, no build step. If your site can run HTML before{" "}
           <code className="rounded bg-surface-sunken px-1.5 py-0.5 text-[13px]">&lt;/body&gt;</code>, it works.
         </p>
-        <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
-          {["WordPress", "Shopify", "Webflow", "Wix", "Squarespace", "Plain HTML"].map((platform) => (
+
+        <div className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-3">
+          {[
+            "WordPress",
+            "Shopify",
+            "Webflow",
+            "Wix",
+            "Squarespace",
+            "BigCommerce",
+            "Ghost",
+            "Framer",
+            "Joomla",
+            "Drupal",
+            "Carrd",
+            "Plain HTML",
+          ].map((platform) => (
             <span
               key={platform}
-              className="rounded-full border border-line bg-surface px-4 py-2 text-[13.5px] font-medium text-ink-2"
+              className="rounded-xl border border-line bg-surface px-5 py-3 text-[14px] font-medium text-ink shadow-card"
             >
               {platform}
             </span>
           ))}
         </div>
+
+        <Link href="/register" className="btn-primary mt-10 px-6 py-3">
+          Add it to your site
+        </Link>
       </section>
 
       {/* FAQ */}
