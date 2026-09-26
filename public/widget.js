@@ -95,10 +95,61 @@
     };
   }
 
+  // Browsers won't play audio until the page has had some user gesture; a
+  // click/keypress anywhere on the host page (not necessarily on the widget)
+  // unlocks it, so a later background-tab notification can actually play.
+  var audioCtx = null;
+  function unlockAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      /* Web Audio unsupported: notification sound just stays silent */
+    }
+  }
+  document.addEventListener("pointerdown", unlockAudio, { once: true, passive: true });
+  document.addEventListener("keydown", unlockAudio, { once: true });
+
+  function playNotificationSound() {
+    if (!audioCtx) return;
+    try {
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(660, now + 0.12);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.42);
+    } catch (e) {
+      /* never let a notification chime break the host page */
+    }
+  }
+
+  function tabIsHidden() {
+    return document.hidden || !document.hasFocus();
+  }
+
+  // Dedupes across both delivery paths (the socket push below and the HTTP
+  // heartbeat's repeating poll) so a still-unopened message doesn't re-chime
+  // or re-bump the count on every subsequent tick.
+  var notifiedIds = Object.create(null);
+  function notifyIfNew(id) {
+    if (notifiedIds[id]) return;
+    notifiedIds[id] = true;
+    if (!isOpen) bumpBadge();
+    if (tabIsHidden()) playNotificationSound();
+  }
+
   function handleIncomingMessage(m) {
     renderMessage(m.id, m.sender, m.text, m.buttons);
     cursor = newerTimestamp(cursor, m.createdAt);
-    if (!isOpen && m.sender !== "VISITOR" && m.id !== seenMessageId) showBadge();
+    if (m.sender !== "VISITOR") notifyIfNew(m.id);
   }
 
   // Real-time transport for presence + message delivery. Loaded from the
@@ -156,9 +207,7 @@
         })
         .then(function (data) {
           var latest = data && data.latestMessage;
-          if (!isOpen && latest && latest.id !== seenMessageId) {
-            showBadge();
-          }
+          if (latest && latest.id !== seenMessageId) notifyIfNew(latest.id);
         })
         .catch(function () {
           /* heartbeat must never break the host page */
@@ -450,17 +499,21 @@
       if (cursor === null) loadHistory();
       startPolling();
       input.focus();
-      hideBadge();
+      clearBadge();
     } else {
       stopPolling();
     }
   }
 
-  function showBadge() {
+  var unreadCount = 0;
+  function bumpBadge() {
+    unreadCount++;
+    badge.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
     badge.style.display = "block";
   }
 
-  function hideBadge() {
+  function clearBadge() {
+    unreadCount = 0;
     badge.style.display = "none";
   }
 
