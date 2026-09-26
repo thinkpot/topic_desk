@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npm run db:start && next dev",
+    "dev": "npm run db:start && tsx watch server.ts",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "NODE_ENV=production tsx server.ts",
     "lint": "next lint",
     "db:start": "prisma dev --name topicdesk --detach",
     "db:stop": "prisma dev stop --name topicdesk",
@@ -24,6 +24,9 @@
     "next": "15.5.25",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
+    "tsx": "^4.23.15",
     "zod": "^3.23.8"
   },
   "devDependencies": {

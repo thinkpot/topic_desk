@@ -86,20 +86,69 @@
     return Math.min(100, Math.max(0, Math.round(((window.scrollY || 0) / scrollable) * 100)));
   }
 
+  function heartbeatPayload() {
+    return {
+      visitorId: visitorId,
+      url: location.href.slice(0, 500),
+      scrollPercent: scrollPercent(),
+      referrer: document.referrer ? document.referrer.slice(0, 500) : undefined,
+    };
+  }
+
+  function handleIncomingMessage(m) {
+    renderMessage(m.id, m.sender, m.text, m.buttons);
+    cursor = newerTimestamp(cursor, m.createdAt);
+    if (!isOpen && m.sender !== "VISITOR" && m.id !== seenMessageId) showBadge();
+  }
+
+  // Real-time transport for presence + message delivery. Loaded from the
+  // socket.io CDN (widget.js itself ships with no bundler/build step) and
+  // degrades to the HTTP heartbeat below if it can't load or connect — a
+  // strict host-page CSP blocking the CDN script or the WS upgrade must never
+  // break the widget, only make it a few seconds less real-time.
+  var socket = null;
+  function connectSocket() {
+    if (typeof window.io !== "function") return;
+    try {
+      socket = window.io(apiBase, {
+        path: "/socket.io",
+        auth: { role: "widget", apiKey: apiKey, visitorId: visitorId },
+        transports: ["websocket", "polling"],
+      });
+      socket.on("connect", function () {
+        socket.emit("widget:heartbeat", heartbeatPayload());
+      });
+      socket.on("chat:message", handleIncomingMessage);
+    } catch (e) {
+      socket = null;
+    }
+  }
+  function loadSocketIO(cb) {
+    try {
+      var s = document.createElement("script");
+      s.src = "https://cdn.socket.io/4.8.1/socket.io.min.js";
+      s.async = true;
+      s.onload = cb;
+      s.onerror = function () {};
+      document.head.appendChild(s);
+    } catch (e) {
+      /* CDN blocked or unavailable: HTTP heartbeat below still works */
+    }
+  }
+
   // Powers the dashboard's Live tab (who's on the site right now, what page,
   // how far they've scrolled) and, piggybacked on the same round trip, lets a
   // closed widget notice a proactive dashboard message without a second poll.
   function sendHeartbeat() {
+    if (socket && socket.connected) {
+      socket.emit("widget:heartbeat", heartbeatPayload());
+      return;
+    }
     try {
       fetch(api("/presence"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          visitorId: visitorId,
-          url: location.href.slice(0, 500),
-          scrollPercent: scrollPercent(),
-          referrer: document.referrer ? document.referrer.slice(0, 500) : undefined,
-        }),
+        body: JSON.stringify(heartbeatPayload()),
         keepalive: true,
       })
         .then(function (r) {
@@ -549,6 +598,7 @@
         track("view");
       }
 
+      loadSocketIO(connectSocket);
       sendHeartbeat();
       setInterval(sendHeartbeat, HEARTBEAT_MS);
       document.addEventListener("visibilitychange", function () {

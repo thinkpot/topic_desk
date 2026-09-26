@@ -7,6 +7,7 @@ import { telegram } from "@/lib/telegram";
 import { resolveWidgetChatbot } from "@/lib/widget";
 import { FlowGraph } from "@/lib/flow-engine";
 import { handOffToHuman, runConversationTurn, needsSessionRestart, restartSession } from "@/lib/flow-runtime";
+import { emitChatMessageToDashboard } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
 
@@ -245,6 +246,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
       }
     }
+  }
+
+  for (const m of responseMessages) {
+    emitChatMessageToDashboard(bot.userId, bot.id, visitorId, m);
   }
 
   return withCors(NextResponse.json({ conversationId: conversation.id, messages: responseMessages }));

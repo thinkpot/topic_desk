@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { emitChatMessageToWidget } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ liveVisitorId: string }> };
 
@@ -55,9 +56,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const message = await prisma.message.create({
     data: { conversationId: conversation.id, sender: "AGENT", text: parsed.data.text },
   });
+  const payload = { id: message.id, sender: message.sender, text: message.text, createdAt: message.createdAt };
 
-  return NextResponse.json(
-    { message: { id: message.id, sender: message.sender, text: message.text, createdAt: message.createdAt } },
-    { status: 201 }
-  );
+  emitChatMessageToWidget(visitor.chatbotId, visitor.visitorId, payload);
+
+  return NextResponse.json({ message: payload }, { status: 201 });
 }

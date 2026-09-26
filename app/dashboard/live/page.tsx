@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { io, Socket } from "socket.io-client";
 import { api, apiErrorMessage } from "@/lib/api";
 import { Alert, Badge, EmptyState, Spinner } from "@/components/ui/primitives";
 
@@ -85,17 +86,28 @@ export default function LivePage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Ids we've already counted toward totalLiveCount, independent of which
+  // ones fit in the capped, rendered list — otherwise a live:update for a
+  // visitor beyond the cap would look "new" every time and inflate the count.
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
+  const detailRef = useRef<LiveDetailResponse | null>(null);
+  detailRef.current = detail;
+
   const loadList = useCallback(() => {
     api
       .get("/live")
-      .then((res) => setData(res.data))
+      .then((res) => {
+        const list: LiveListResponse = res.data;
+        knownIdsRef.current = new Set(list.visitors.map((v) => v.id));
+        setData(list);
+      })
       .catch((err) => setError(apiErrorMessage(err)));
   }, []);
 
   useEffect(() => {
     loadList();
-    const t = setInterval(loadList, 5000);
-    return () => clearInterval(t);
   }, [loadList]);
 
   const loadDetail = useCallback((id: string) => {
@@ -111,9 +123,62 @@ export default function LivePage() {
       return;
     }
     loadDetail(selectedId);
-    const t = setInterval(() => loadDetail(selectedId), 3000);
-    return () => clearInterval(t);
   }, [selectedId, loadDetail]);
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) return;
+
+    const socket: Socket = io({ path: "/socket.io", auth: { role: "dashboard", token } });
+
+    socket.on("live:update", (row: LiveVisitorRow) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        const isNew = !knownIdsRef.current.has(row.id);
+        knownIdsRef.current.add(row.id);
+        const withoutRow = prev.visitors.filter((v) => v.id !== row.id);
+        const visitors = [row, ...withoutRow]
+          .sort((a, b) => new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime())
+          .slice(0, prev.cap);
+        return { ...prev, visitors, totalLiveCount: prev.totalLiveCount + (isNew ? 1 : 0) };
+      });
+    });
+
+    socket.on("live:left", ({ id }: { id: string }) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        const wasKnown = knownIdsRef.current.delete(id);
+        return {
+          ...prev,
+          visitors: prev.visitors.filter((v) => v.id !== id),
+          totalLiveCount: Math.max(0, prev.totalLiveCount - (wasKnown ? 1 : 0)),
+        };
+      });
+    });
+
+    socket.on(
+      "chat:message",
+      (payload: { chatbotId: string; visitorId: string; message: LiveDetailMessage }) => {
+        const current = detailRef.current;
+        if (!current || current.visitor.chatbotId !== payload.chatbotId || current.visitor.visitorId !== payload.visitorId) {
+          return;
+        }
+        if (!current.conversation) {
+          if (selectedIdRef.current) loadDetail(selectedIdRef.current);
+          return;
+        }
+        setDetail((prev) => {
+          if (!prev || !prev.conversation) return prev;
+          if (prev.conversation.messages.some((m) => m.id === payload.message.id)) return prev;
+          return { ...prev, conversation: { ...prev.conversation, messages: [...prev.conversation.messages, payload.message] } };
+        });
+      }
+    );
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [loadDetail]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

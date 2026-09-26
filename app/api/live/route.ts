@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { liveSince } from "@/lib/presence";
-
-function visitorLabel(variables: Record<string, unknown>, visitorId: string): string {
-  const name = variables.name ?? variables.Name;
-  return typeof name === "string" && name.trim() ? name.trim() : `Visitor ${visitorId.slice(-6)}`;
-}
+import { visitorLabel } from "@/lib/live-visitor-view";
 
 // Live tab: every visitor currently browsing any of this account's chatbots,
 // capped to what their plan allows (Plan.maxLiveVisitors). totalLiveCount is
