@@ -61,6 +61,8 @@ export function publicUser(user: SessionUser) {
       maxChatbots: user.plan.maxChatbots,
       maxMonthlyUsers: user.plan.maxMonthlyUsers,
       isPaid: user.plan.isPaid,
+      maxLiveVisitors: user.plan.maxLiveVisitors,
+      supportsDashboardChat: user.plan.supportsDashboardChat,
     },
   };
 }

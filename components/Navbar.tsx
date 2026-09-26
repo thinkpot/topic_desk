@@ -18,6 +18,7 @@ export default function Navbar() {
     : [
         { href: "/dashboard", label: "Overview", exact: true },
         { href: "/dashboard/chatbots", label: "Chatbots" },
+        { href: "/dashboard/live", label: "Live" },
         { href: "/dashboard/billing", label: "Billing" },
       ];
 

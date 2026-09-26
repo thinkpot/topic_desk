@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, apiErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { Analytics } from "@/lib/analytics";
 import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
@@ -24,6 +25,7 @@ interface Chatbot {
   sessionTimeoutMinutes: number;
   restartKeywords: string;
   keepVariablesAcrossSessions: boolean;
+  dashboardChatEnabled: boolean;
 }
 
 type Tab = "install" | "metrics" | "settings";
@@ -44,6 +46,7 @@ function formatDuration(minutes: number | null): string {
 export default function ChatbotDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
 
   const [bot, setBot] = useState<Chatbot | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -329,6 +332,41 @@ export default function ChatbotDetailPage() {
                 />
               </div>
             </div>
+          </section>
+
+          <section className="surface p-5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[15px] font-medium">Dashboard chat</h2>
+              {!user?.plan.supportsDashboardChat && <Badge tone="warning">Premium</Badge>}
+            </div>
+            <p className="mt-0.5 text-[13px] text-ink-2">
+              When on, visitor messages are handled from this account&apos;s{" "}
+              <Link href="/dashboard/live" className="underline underline-offset-2">
+                Live tab
+              </Link>{" "}
+              instead of Telegram — no topic gets created, and you reply directly from the dashboard.
+            </p>
+            {user?.plan.supportsDashboardChat ? (
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[14px] font-medium">Enable dashboard chat</p>
+                  <p className="mt-0.5 text-[13px] text-ink-2">Turn this off to go back to Telegram handoff.</p>
+                </div>
+                <Toggle
+                  checked={bot.dashboardChatEnabled}
+                  onChange={(next) => save({ dashboardChatEnabled: next })}
+                  label="Enable dashboard chat"
+                />
+              </div>
+            ) : (
+              <p className="mt-4 text-[13px] text-ink-3">
+                Included on Premium.{" "}
+                <Link href="/dashboard/billing" className="underline underline-offset-2">
+                  Upgrade
+                </Link>{" "}
+                to reply to visitors straight from your dashboard.
+              </p>
+            )}
           </section>
 
           <section className="surface p-5">

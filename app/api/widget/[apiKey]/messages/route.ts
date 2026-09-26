@@ -226,7 +226,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   } else {
     // Plain human relay: ENDED-without-a-topic and NOT_STARTED-with-no-flow
     // both fall through here and get a topic the same way first contact does.
-    if (!conversation.topicId) {
+    // A dashboard-chat bot never gets a topic at all, so guard on flowStatus
+    // (which handOffToHuman always sets) rather than topicId being present.
+    if (conversation.flowStatus !== "HANDED_OFF") {
       try {
         conversation = await handOffToHuman(bot, conversation, visitorId, visitorName);
       } catch {
@@ -236,10 +238,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       }
     }
     await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
-    try {
-      await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
-    } catch {
-      // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
+    if (!bot.dashboardChatEnabled) {
+      try {
+        await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
+      } catch {
+        // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
+      }
     }
   }
 

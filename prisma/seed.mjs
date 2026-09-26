@@ -26,6 +26,8 @@ const PLANS = [
     isPaid: true,
     isPublic: true,
     sortOrder: 1,
+    maxLiveVisitors: 10,
+    supportsDashboardChat: false,
   },
   {
     slug: "pro",
@@ -37,6 +39,8 @@ const PLANS = [
     isPaid: true,
     isPublic: true,
     sortOrder: 2,
+    maxLiveVisitors: 100,
+    supportsDashboardChat: true,
   },
 ];
 

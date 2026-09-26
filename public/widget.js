@@ -70,6 +70,55 @@
     }
   }
 
+  var HEARTBEAT_MS = 10000;
+  var SEEN_MSG_KEY = "td_seenmsg_" + apiKey.slice(-8);
+  var seenMessageId = null;
+  try {
+    seenMessageId = localStorage.getItem(SEEN_MSG_KEY);
+  } catch (e) {
+    /* private-browsing localStorage can throw */
+  }
+
+  function scrollPercent() {
+    var doc = document.documentElement;
+    var scrollable = (doc.scrollHeight || 0) - (doc.clientHeight || 0);
+    if (scrollable <= 0) return 0;
+    return Math.min(100, Math.max(0, Math.round(((window.scrollY || 0) / scrollable) * 100)));
+  }
+
+  // Powers the dashboard's Live tab (who's on the site right now, what page,
+  // how far they've scrolled) and, piggybacked on the same round trip, lets a
+  // closed widget notice a proactive dashboard message without a second poll.
+  function sendHeartbeat() {
+    try {
+      fetch(api("/presence"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: visitorId,
+          url: location.href.slice(0, 500),
+          scrollPercent: scrollPercent(),
+          referrer: document.referrer ? document.referrer.slice(0, 500) : undefined,
+        }),
+        keepalive: true,
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (data) {
+          var latest = data && data.latestMessage;
+          if (!isOpen && latest && latest.id !== seenMessageId) {
+            showBadge();
+          }
+        })
+        .catch(function () {
+          /* heartbeat must never break the host page */
+        });
+    } catch (e) {
+      /* heartbeat must never break the host page */
+    }
+  }
+
   function el(tag, attrs, children) {
     var e = document.createElement(tag);
     Object.keys(attrs || {}).forEach(function (k) {
@@ -105,14 +154,29 @@
   var SEND_ICON =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>';
 
-  var bubble = el("button", {
-    "aria-label": "Open chat",
-    html: CHAT_ICON,
-    style:
-      "display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:none;" +
-      "cursor:pointer;color:#fff;box-shadow:0 6px 24px rgba(10,10,10,.24);transition:transform .15s ease;",
-    onclick: toggleOpen,
-  });
+  var bubbleIcon = el("span", { style: "display:flex;", html: CHAT_ICON });
+  var badge = el(
+    "span",
+    {
+      style:
+        "display:none;position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 4px;" +
+        "border-radius:9px;background:#e0402c;color:#fff;font-size:11px;font-weight:600;line-height:18px;" +
+        "text-align:center;box-shadow:0 0 0 2px #fff;",
+    },
+    ["1"]
+  );
+  var bubble = el(
+    "button",
+    {
+      "aria-label": "Open chat",
+      style:
+        "position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;" +
+        "border-radius:50%;border:none;cursor:pointer;color:#fff;box-shadow:0 6px 24px rgba(10,10,10,.24);" +
+        "transition:transform .15s ease;",
+      onclick: toggleOpen,
+    },
+    [bubbleIcon, badge]
+  );
   bubble.addEventListener("mouseenter", function () {
     bubble.style.transform = "scale(1.05)";
   });
@@ -261,6 +325,14 @@
   function renderMessage(id, sender, text, buttons) {
     if (id && renderedIds[id]) return;
     if (id) renderedIds[id] = true;
+    if (id) {
+      seenMessageId = id;
+      try {
+        localStorage.setItem(SEEN_MSG_KEY, id);
+      } catch (e) {
+        /* private-browsing localStorage can throw */
+      }
+    }
 
     var mine = sender === "VISITOR";
     clearActiveButtons();
@@ -318,7 +390,7 @@
   function toggleOpen() {
     isOpen = !isOpen;
     panel.style.display = isOpen ? "flex" : "none";
-    bubble.innerHTML = isOpen ? CLOSE_ICON : CHAT_ICON;
+    bubbleIcon.innerHTML = isOpen ? CLOSE_ICON : CHAT_ICON;
     bubble.setAttribute("aria-label", isOpen ? "Close chat" : "Open chat");
 
     if (isOpen) {
@@ -329,9 +401,18 @@
       if (cursor === null) loadHistory();
       startPolling();
       input.focus();
+      hideBadge();
     } else {
       stopPolling();
     }
+  }
+
+  function showBadge() {
+    badge.style.display = "block";
+  }
+
+  function hideBadge() {
+    badge.style.display = "none";
   }
 
   function loadHistory() {
@@ -467,6 +548,24 @@
       } catch (e) {
         track("view");
       }
+
+      sendHeartbeat();
+      setInterval(sendHeartbeat, HEARTBEAT_MS);
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") sendHeartbeat();
+      });
+      var scrollTimer = null;
+      window.addEventListener(
+        "scroll",
+        function () {
+          if (scrollTimer) return;
+          scrollTimer = setTimeout(function () {
+            scrollTimer = null;
+            sendHeartbeat();
+          }, 4000);
+        },
+        { passive: true }
+      );
     })
     .catch(function () {
       // Inactive chatbot, unpaid account, or a domain that isn't allowed: stay hidden.

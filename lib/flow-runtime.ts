@@ -15,6 +15,10 @@ function topicNameFor(visitorId: string, visitorName?: string | null): string {
  * topic — re-handoffs after a session restart land in the same thread rather
  * than spawning a duplicate. Throws if a new topic can't be created — callers
  * decide how to surface that (e.g. a 503 to the widget).
+ *
+ * When the chatbot has dashboard chat enabled, there's no Telegram topic at
+ * all — the owner replies from the Live tab instead, reusing the same
+ * Message/Conversation rows (see app/api/live/[liveVisitorId]/messages).
  */
 export async function handOffToHuman(
   bot: Chatbot,
@@ -23,6 +27,13 @@ export async function handOffToHuman(
   visitorName: string | null | undefined,
   contextLines: string[] = []
 ): Promise<Conversation> {
+  if (bot.dashboardChatEnabled) {
+    return prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { flowStatus: "HANDED_OFF", lastMessageAt: new Date() },
+    });
+  }
+
   const topicId =
     conversation.topicId ??
     (await telegram.createForumTopic(bot.botToken, bot.groupChatId, topicNameFor(visitorId, visitorName)))

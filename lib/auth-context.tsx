@@ -12,6 +12,8 @@ export interface UserPlan {
   maxChatbots: number;
   maxMonthlyUsers: number;
   isPaid: boolean;
+  maxLiveVisitors: number;
+  supportsDashboardChat: boolean;
 }
 
 export interface Me {

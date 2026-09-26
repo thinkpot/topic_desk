@@ -45,6 +45,11 @@ model Plan {
   isPaid          Boolean  @default(true)
   isPublic        Boolean  @default(true)
   sortOrder       Int      @default(0)
+  // Live-visitor analytics tab: how many currently-active visitors this plan
+  // can see at once (across all of the account's chatbots), and whether it
+  // can also reply to them directly from the dashboard instead of Telegram.
+  maxLiveVisitors       Int     @default(10)
+  supportsDashboardChat Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -93,12 +98,17 @@ model Chatbot {
   sessionTimeoutMinutes       Int     @default(30)
   restartKeywords             String  @default("hi, menu, restart, start over")
   keepVariablesAcrossSessions Boolean @default(true)
+  // When on (premium plans only), a human handoff never opens a Telegram
+  // topic — the owner replies from the dashboard's Live tab instead. See
+  // handOffToHuman in lib/flow-runtime.ts.
+  dashboardChatEnabled Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   conversations Conversation[]
   stats         WidgetStat[]
   flow          Flow?
+  liveVisitors  LiveVisitor[]
 
   @@index([userId])
 }
@@ -171,4 +181,28 @@ model WidgetStat {
 
   @@unique([chatbotId, date])
   @@index([chatbotId, date])
+}
+
+// A row per (chatbot, visitor) currently browsing with the widget loaded,
+// updated by a heartbeat from the widget every few seconds — independent of
+// whether they've ever opened the chat. "Live" is computed by the caller as
+// lastSeenAt within a short window; there's no cleanup job, stale rows are
+// just filtered out (same pattern as session-lifecycle staleness).
+model LiveVisitor {
+  id            String   @id @default(cuid())
+  chatbotId     String
+  chatbot       Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  visitorId     String
+  currentUrl    String
+  scrollPercent Int      @default(0)
+  referrer      String?
+  userAgent     String?
+  // Rolling list of { url, at } the visitor has been on, most recent last,
+  // capped at 30 entries — enough for a "recent path" view without unbounded growth.
+  pageViews     Json     @default("[]")
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+
+  @@unique([chatbotId, visitorId])
+  @@index([chatbotId, lastSeenAt])
 }

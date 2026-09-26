@@ -29,6 +29,8 @@ const planSchema = z.object({
   isPaid: z.boolean(),
   isPublic: z.boolean(),
   sortOrder: z.number().int().min(0).max(999),
+  maxLiveVisitors: z.number().int().min(0).max(10_000),
+  supportsDashboardChat: z.boolean(),
 });
 
 export async function POST(req: NextRequest) {

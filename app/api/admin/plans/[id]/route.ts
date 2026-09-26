@@ -15,6 +15,8 @@ const updateSchema = z.object({
   isPaid: z.boolean().optional(),
   isPublic: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(999).optional(),
+  maxLiveVisitors: z.number().int().min(0).max(10_000).optional(),
+  supportsDashboardChat: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {

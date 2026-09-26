@@ -29,6 +29,7 @@ const updateSchema = z.object({
   sessionTimeoutMinutes: z.number().int().min(1).max(43200).optional(), // up to 30 days
   restartKeywords: z.string().max(500).optional(),
   keepVariablesAcrossSessions: z.boolean().optional(),
+  dashboardChatEnabled: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
@@ -41,6 +42,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
   const parsed = updateSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+
+  if (parsed.data.dashboardChatEnabled && !auth.user.plan.supportsDashboardChat) {
+    return NextResponse.json({ error: "Dashboard chat isn't included in your current plan." }, { status: 403 });
+  }
 
   const updated = await prisma.chatbot.update({ where: { id: bot.id }, data: parsed.data });
   const { botToken, webhookSecret, ...safeBot } = updated;

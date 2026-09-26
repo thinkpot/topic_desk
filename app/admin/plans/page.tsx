@@ -16,6 +16,8 @@ interface AdminPlan {
   isPaid: boolean;
   isPublic: boolean;
   sortOrder: number;
+  maxLiveVisitors: number;
+  supportsDashboardChat: boolean;
   _count: { users: number };
 }
 
@@ -31,6 +33,8 @@ interface PlanForm {
   isPaid: boolean;
   isPublic: boolean;
   sortOrder: string;
+  maxLiveVisitors: string;
+  supportsDashboardChat: boolean;
 }
 
 const BLANK: PlanForm = {
@@ -45,6 +49,8 @@ const BLANK: PlanForm = {
   isPaid: true,
   isPublic: true,
   sortOrder: "10",
+  maxLiveVisitors: "10",
+  supportsDashboardChat: false,
 };
 
 function toForm(plan: AdminPlan): PlanForm {
@@ -60,6 +66,8 @@ function toForm(plan: AdminPlan): PlanForm {
     isPaid: plan.isPaid,
     isPublic: plan.isPublic,
     sortOrder: String(plan.sortOrder),
+    maxLiveVisitors: String(plan.maxLiveVisitors),
+    supportsDashboardChat: plan.supportsDashboardChat,
   };
 }
 
@@ -95,6 +103,8 @@ export default function AdminPlansPage() {
       isPaid: form.isPaid,
       isPublic: form.isPublic,
       sortOrder: Number(form.sortOrder),
+      maxLiveVisitors: Number(form.maxLiveVisitors),
+      supportsDashboardChat: form.supportsDashboardChat,
     };
   }
 
@@ -182,6 +192,14 @@ export default function AdminPlansPage() {
                 <div className="flex justify-between">
                   <dt className="text-ink-2">Visitors / month</dt>
                   <dd className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-2">Live visitors shown</dt>
+                  <dd className="metric font-medium">{plan.maxLiveVisitors}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-2">Dashboard chat</dt>
+                  <dd className="metric font-medium">{plan.supportsDashboardChat ? "Included" : "—"}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-ink-2">Accounts on plan</dt>
@@ -328,6 +346,29 @@ export default function AdminPlansPage() {
                 />
                 Unlimited
               </label>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-md border border-line p-4">
+            <Field label="Live visitors shown at once" hint="How many currently-active visitors this plan can see in the Live tab.">
+              <input
+                type="number"
+                min={0}
+                value={form.maxLiveVisitors}
+                onChange={(e) => setForm({ ...form, maxLiveVisitors: e.target.value })}
+                className="input"
+              />
+            </Field>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[14px] font-medium">Dashboard chat</p>
+                <p className="text-[13px] text-ink-2">Lets accounts reply to visitors from the dashboard instead of Telegram.</p>
+              </div>
+              <Toggle
+                checked={form.supportsDashboardChat}
+                onChange={(next) => setForm({ ...form, supportsDashboardChat: next })}
+                label="Dashboard chat"
+              />
             </div>
           </div>
 
