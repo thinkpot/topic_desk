@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
@@ -10,6 +10,9 @@ import { Spinner } from "@/components/ui/primitives";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, blockReason } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  // The flow canvas needs the full viewport, not the standard content column.
+  const isFullBleed = pathname.endsWith("/flow");
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -24,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
       {blockReason && (
         <div className="border-b border-[#f4dfa8] bg-[#fdf8ea]">
@@ -36,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       )}
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className={isFullBleed ? "relative min-h-0 flex-1" : "mx-auto w-full max-w-6xl px-6 py-8"}>{children}</main>
     </div>
   );
 }

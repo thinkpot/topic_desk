@@ -5,6 +5,8 @@ import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { telegram } from "@/lib/telegram";
 import { resolveWidgetChatbot } from "@/lib/widget";
+import { FlowGraph } from "@/lib/flow-engine";
+import { handOffToHuman, runConversationTurn, needsSessionRestart, restartSession } from "@/lib/flow-runtime";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
 
@@ -19,7 +21,20 @@ function startOfMonth(): Date {
   return d;
 }
 
-// Polling endpoint: the widget calls this every few seconds while open.
+function toClientMessage(m: { id: string; sender: string; text: string; buttons: unknown; createdAt: Date }) {
+  return {
+    id: m.id,
+    sender: m.sender,
+    text: m.text,
+    buttons: (m.buttons as { id: string; label: string }[] | null) ?? undefined,
+    createdAt: m.createdAt,
+  };
+}
+
+// Polling endpoint: the widget calls this every few seconds while open, and
+// once on chat-open to load history — which, for a flow-enabled chatbot with
+// no conversation yet, is also what starts the flow (the bot gets to speak
+// first, same as Wati/AiSensy triggering on session start).
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const { apiKey } = await params;
   const visitorId = req.nextUrl.searchParams.get("visitorId");
@@ -34,12 +49,57 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   }
   const { bot } = resolved;
 
-  const conversation = await prisma.conversation.findUnique({
+  let conversation = await prisma.conversation.findUnique({
     where: { chatbotId_visitorId: { chatbotId: bot.id, visitorId } },
   });
 
   if (!conversation) {
+    const flow = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
+    const monthlyCount = await prisma.conversation.count({
+      where: { chatbot: { userId: bot.userId }, createdAt: { gte: startOfMonth() } },
+    });
+
+    if (flow?.isEnabled && monthlyCount < bot.user.plan.maxMonthlyUsers) {
+      conversation = await prisma.conversation.create({
+        data: { chatbotId: bot.id, visitorId, flowStatus: "RUNNING" },
+      });
+      const { botMessages } = await runConversationTurn({
+        bot,
+        graph: { nodes: flow.nodes, edges: flow.edges } as unknown as FlowGraph,
+        conversation,
+        visitorId,
+        visitorName: null,
+        input: null,
+      }).catch(() => ({ botMessages: [] as Awaited<ReturnType<typeof prisma.message.create>>[] }));
+
+      return withCors(
+        NextResponse.json({
+          conversationId: conversation.id,
+          welcomeMessage: bot.welcomeMessage,
+          messages: botMessages.map(toClientMessage),
+        })
+      );
+    }
+
     return withCors(NextResponse.json({ conversationId: null, welcomeMessage: bot.welcomeMessage, messages: [] }));
+  }
+
+  // A HANDED_OFF/ENDED conversation that's gone cold re-engages the bot the
+  // moment the visitor reopens the widget — they shouldn't have to type
+  // anything to get a "welcome back" out of a bot that's supposed to be
+  // running. Self-limiting: this bumps lastMessageAt, so the very next poll
+  // is no longer stale and this doesn't refire on every 3s tick.
+  const flowForRestart = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
+  if (needsSessionRestart({ chatbot: bot, conversation, flowEnabled: !!flowForRestart?.isEnabled })) {
+    conversation = await restartSession(bot, conversation);
+    await runConversationTurn({
+      bot,
+      graph: { nodes: flowForRestart!.nodes, edges: flowForRestart!.edges } as unknown as FlowGraph,
+      conversation,
+      visitorId,
+      visitorName: conversation.visitorName,
+      input: null,
+    }).catch(() => null);
   }
 
   const afterDate = after ? new Date(after) : new Date(0);
@@ -53,7 +113,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     NextResponse.json({
       conversationId: conversation.id,
       welcomeMessage: bot.welcomeMessage,
-      messages: messages.map((m) => ({ id: m.id, sender: m.sender, text: m.text, createdAt: m.createdAt })),
+      messages: messages.map(toClientMessage),
     })
   );
 }
@@ -63,16 +123,20 @@ const sendSchema = z.object({
   visitorName: z.string().max(200).optional(),
   pageUrl: z.string().max(500).optional(),
   text: z.string().min(1).max(2000),
+  // Set when the visitor tapped a flow "buttons" option rather than typing.
+  choiceId: z.string().max(200).optional(),
 });
 
-// Sends a visitor message; creates the conversation (and its Telegram topic) on first contact.
+// Sends a visitor message (typed or a button tap). Routes into the flow while
+// it's running; otherwise relays straight into Telegram, creating the topic
+// on first contact — unchanged from before flows existed.
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const { apiKey } = await params;
   const parsed = sendSchema.safeParse(await req.json());
   if (!parsed.success) {
     return withCors(NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 }));
   }
-  const { visitorId, visitorName, pageUrl, text } = parsed.data;
+  const { visitorId, visitorName, pageUrl, text, choiceId } = parsed.data;
 
   const resolved = await resolveWidgetChatbot(apiKey);
   if ("error" in resolved) {
@@ -89,6 +153,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   let conversation = await prisma.conversation.findUnique({
     where: { chatbotId_visitorId: { chatbotId: bot.id, visitorId } },
   });
+  const flow = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
+  const flowActive = !!flow?.isEnabled;
 
   if (!conversation) {
     const monthlyCount = await prisma.conversation.count({
@@ -103,50 +169,79 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const topicName = `${visitorName?.trim() || "Visitor"} · ${visitorId.slice(-6)}`;
-    let topic;
-    try {
-      topic = await telegram.createForumTopic(bot.botToken, bot.groupChatId, topicName);
-    } catch {
-      return withCors(
-        NextResponse.json({ error: "Chat is temporarily unavailable, please try again shortly." }, { status: 503 })
-      );
-    }
-
     conversation = await prisma.conversation.create({
       data: {
         chatbotId: bot.id,
         visitorId,
         visitorName: visitorName?.trim() || undefined,
         pageUrl: pageUrl || undefined,
-        topicId: topic.message_thread_id,
+        flowStatus: flowActive ? "RUNNING" : "NOT_STARTED",
       },
     });
 
-    if (pageUrl) {
+    if (!flowActive) {
       try {
-        await telegram.sendMessage(bot.botToken, bot.groupChatId, `New chat from ${pageUrl}`, topic.message_thread_id);
+        conversation = await handOffToHuman(
+          bot,
+          conversation,
+          visitorId,
+          visitorName,
+          pageUrl ? [`New chat from ${pageUrl}`] : []
+        );
       } catch {
-        // context line is a nicety; never block the actual message on it
+        return withCors(
+          NextResponse.json({ error: "Chat is temporarily unavailable, please try again shortly." }, { status: 503 })
+        );
       }
     }
   }
 
-  const message = await prisma.message.create({
+  const visitorMessage = await prisma.message.create({
     data: { conversationId: conversation.id, sender: "VISITOR", text },
   });
-  await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
+  const responseMessages = [toClientMessage(visitorMessage)];
 
-  try {
-    await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId);
-  } catch {
-    // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
+  // A cold HANDED_OFF/ENDED conversation (or an explicit "hi"/"menu"/"restart")
+  // re-engages the bot from Start rather than staying silent — see
+  // needsSessionRestart in lib/flow-runtime.ts.
+  const restarting = needsSessionRestart({ chatbot: bot, conversation, flowEnabled: flowActive, incomingText: text });
+  if (restarting) {
+    conversation = await restartSession(bot, conversation);
   }
 
-  return withCors(
-    NextResponse.json({
-      conversationId: conversation.id,
-      message: { id: message.id, sender: message.sender, text: message.text, createdAt: message.createdAt },
-    })
-  );
+  if (conversation.flowStatus === "RUNNING" && flow) {
+    const { botMessages, conversation: updated } = await runConversationTurn({
+      bot,
+      graph: { nodes: flow.nodes, edges: flow.edges } as unknown as FlowGraph,
+      conversation,
+      visitorId,
+      visitorName,
+      // On a restart, this message was the wake-up trigger, not an answer to
+      // whatever node Start leads to — the engine should greet fresh, not
+      // silently consume "hi" as a reply to its first Question node.
+      input: restarting ? null : { text, choiceId },
+    });
+    conversation = updated;
+    responseMessages.push(...botMessages.map(toClientMessage));
+  } else {
+    // Plain human relay: ENDED-without-a-topic and NOT_STARTED-with-no-flow
+    // both fall through here and get a topic the same way first contact does.
+    if (!conversation.topicId) {
+      try {
+        conversation = await handOffToHuman(bot, conversation, visitorId, visitorName);
+      } catch {
+        return withCors(
+          NextResponse.json({ error: "Chat is temporarily unavailable, please try again shortly." }, { status: 503 })
+        );
+      }
+    }
+    await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
+    try {
+      await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
+    } catch {
+      // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
+    }
+  }
+
+  return withCors(NextResponse.json({ conversationId: conversation.id, messages: responseMessages }));
 }

@@ -26,6 +26,9 @@ const updateSchema = z.object({
   widgetFont: z.enum(WIDGET_FONT_KEYS).optional(),
   allowedDomains: z.string().max(1000).optional(),
   isActive: z.boolean().optional(),
+  sessionTimeoutMinutes: z.number().int().min(1).max(43200).optional(), // up to 30 days
+  restartKeywords: z.string().max(500).optional(),
+  keepVariablesAcrossSessions: z.boolean().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {

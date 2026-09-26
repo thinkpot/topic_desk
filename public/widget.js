@@ -23,6 +23,7 @@
   var pollTimer = null;
   var pollInFlight = false;
   var renderedIds = Object.create(null);
+  var activeButtonsEl = null; // the one currently-clickable flow button row, if any
 
   // Matches the "Daylight" theme in lib/widget-appearance.ts — shown until
   // /config resolves the chatbot's actual theme, and if that call fails.
@@ -245,13 +246,25 @@
     statusEl.style.display = text ? "block" : "none";
   }
 
+  function clearActiveButtons() {
+    if (activeButtonsEl) {
+      activeButtonsEl.remove();
+      activeButtonsEl = null;
+    }
+  }
+
   // `id` dedupes across overlapping polls and the poll vs. the sender's own
   // request racing each other — both can otherwise deliver the same row.
-  function renderMessage(id, sender, text) {
+  // `buttons`, when present, renders a row of tappable flow choices below the
+  // bubble; only ever one such row is live — any later message (bot or the
+  // visitor's own reply) supersedes and removes it.
+  function renderMessage(id, sender, text, buttons) {
     if (id && renderedIds[id]) return;
     if (id) renderedIds[id] = true;
 
     var mine = sender === "VISITOR";
+    clearActiveButtons();
+
     var bubbleEl = el(
       "div",
       {
@@ -270,6 +283,35 @@
       [text]
     );
     messagesEl.appendChild(bubbleEl);
+
+    if (buttons && buttons.length && !mine) {
+      var row = el("div", {
+        style: "display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:82%;",
+      });
+      buttons.forEach(function (opt) {
+        row.appendChild(
+          el(
+            "button",
+            {
+              type: "button",
+              style:
+                "padding:7px 13px;border-radius:999px;border:1px solid " +
+                colors.accent +
+                ";background:transparent;color:" +
+                colors.accent +
+                ";font-size:13px;font-family:inherit;cursor:pointer;",
+              onclick: function () {
+                sendChoice(opt);
+              },
+            },
+            [opt.label]
+          )
+        );
+      });
+      messagesEl.appendChild(row);
+      activeButtonsEl = row;
+    }
+
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -302,7 +344,7 @@
         setStatus("");
         if (data.messages && data.messages.length) {
           data.messages.forEach(function (m) {
-            renderMessage(m.id, m.sender, m.text);
+            renderMessage(m.id, m.sender, m.text, m.buttons);
             cursor = newerTimestamp(cursor, m.createdAt);
           });
         } else {
@@ -325,7 +367,7 @@
       .then(function (data) {
         if (data.messages && data.messages.length) {
           data.messages.forEach(function (m) {
-            renderMessage(m.id, m.sender, m.text);
+            renderMessage(m.id, m.sender, m.text, m.buttons);
             cursor = newerTimestamp(cursor, m.createdAt);
           });
         }
@@ -349,19 +391,20 @@
     }
   }
 
-  function send() {
-    var text = input.value.trim();
-    if (!text) return;
-    input.value = "";
+  // Shared by typed messages and button taps. Rendering happens only once the
+  // server confirms and hands back real ids — an optimistic render here would
+  // race the next poll tick and could show the same message twice (nothing to
+  // dedupe against until this resolves). The response includes the visitor's
+  // own saved message plus anything the flow says next, all in one round trip.
+  function sendPayload(extra) {
     sendBtn.disabled = true;
+    var payload = { visitorId: visitorId };
+    for (var k in extra) payload[k] = extra[k];
 
-    // Rendered only once the server confirms and hands back a real id — an
-    // optimistic render here raced the next poll tick and could show this
-    // same message twice (it has no id to dedupe against until this resolves).
-    fetch(api("/messages"), {
+    return fetch(api("/messages"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitorId: visitorId, text: text, pageUrl: location.href.slice(0, 500) }),
+      body: JSON.stringify(payload),
     })
       .then(function (r) {
         if (!r.ok) {
@@ -372,8 +415,10 @@
         return r.json();
       })
       .then(function (data) {
-        renderMessage(data.message.id, data.message.sender, data.message.text);
-        cursor = newerTimestamp(cursor, data.message.createdAt);
+        (data.messages || []).forEach(function (m) {
+          renderMessage(m.id, m.sender, m.text, m.buttons);
+          cursor = newerTimestamp(cursor, m.createdAt);
+        });
         setStatus("");
       })
       .catch(function (err) {
@@ -382,6 +427,18 @@
       .finally(function () {
         sendBtn.disabled = false;
       });
+  }
+
+  function send() {
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendPayload({ text: text, pageUrl: location.href.slice(0, 500) });
+  }
+
+  function sendChoice(option) {
+    clearActiveButtons();
+    sendPayload({ text: option.label, choiceId: option.id });
   }
 
   input.addEventListener("keydown", function (e) {

@@ -20,7 +20,15 @@ enum ConversationStatus {
 enum MessageSender {
   VISITOR
   AGENT
+  BOT
   SYSTEM
+}
+
+enum FlowStatus {
+  NOT_STARTED
+  RUNNING
+  HANDED_OFF
+  ENDED
 }
 
 // Plans live in the database so admins can change pricing and limits without a
@@ -79,13 +87,36 @@ model Chatbot {
   isActive       Boolean  @default(true)
   allowedDomains String? // comma separated hostnames, empty = allow any
   webhookSecret  String
+  // Once a conversation is HANDED_OFF or ENDED, this long of visitor silence
+  // (or a matching restart keyword) re-triggers the flow from Start in the
+  // same conversation/topic, instead of the bot staying silent forever.
+  sessionTimeoutMinutes       Int     @default(30)
+  restartKeywords             String  @default("hi, menu, restart, start over")
+  keepVariablesAcrossSessions Boolean @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   conversations Conversation[]
   stats         WidgetStat[]
+  flow          Flow?
 
   @@index([userId])
+}
+
+// One drag-and-drop conversation flow per chatbot. Nodes/edges are stored as
+// the raw React Flow graph (JSON) rather than normalized tables — node shapes
+// differ per type (message/question/buttons/condition/...) and the canvas
+// only ever reads/writes the whole graph at once, so normalizing it would add
+// structure with no real query benefit.
+model Flow {
+  id        String   @id @default(cuid())
+  chatbotId String   @unique
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  nodes     Json
+  edges     Json
+  isEnabled Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Conversation {
@@ -95,8 +126,15 @@ model Conversation {
   visitorId     String
   visitorName   String?
   pageUrl       String?
-  topicId       Int
+  // Null until a human takes over (either the flow hands off, or there's no
+  // flow at all and the very first message creates the topic immediately).
+  topicId       Int?
   status        ConversationStatus @default(OPEN)
+  // Flow execution state. NOT_STARTED/ENDED conversations with no topicId yet
+  // fall through to creating one on the next message, same as a bot-less chat.
+  flowStatus    FlowStatus         @default(NOT_STARTED)
+  currentNodeId String?
+  variables     Json               @default("{}")
   lastMessageAt DateTime           @default(now())
   createdAt     DateTime           @default(now())
 
@@ -113,6 +151,8 @@ model Message {
   conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         MessageSender
   text           String
+  // Present on a BOT message from a "buttons" node — the choices offered.
+  buttons        Json?
   createdAt      DateTime      @default(now())
 
   @@index([conversationId, createdAt])

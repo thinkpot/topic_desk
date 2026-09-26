@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@xyflow/react": "^12.11.6",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",

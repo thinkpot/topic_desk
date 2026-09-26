@@ -21,6 +21,9 @@ interface Chatbot {
   widgetTheme: string;
   widgetFont: string;
   allowedDomains: string | null;
+  sessionTimeoutMinutes: number;
+  restartKeywords: string;
+  keepVariablesAcrossSessions: boolean;
 }
 
 type Tab = "install" | "metrics" | "settings";
@@ -147,6 +150,15 @@ export default function ChatbotDetailPage() {
             {t.label}
           </button>
         ))}
+        <Link
+          href={`/dashboard/chatbots/${bot.id}/flow`}
+          className="-mb-px flex items-center gap-1.5 border-b-2 border-transparent px-3 pb-2.5 text-[14px] font-medium text-ink-3 transition-colors hover:text-ink"
+        >
+          Flow
+          <span className="rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10.5px] font-semibold text-ink-2">
+            New
+          </span>
+        </Link>
       </div>
 
       {tab === "install" && (
@@ -260,6 +272,62 @@ export default function ChatbotDetailPage() {
               </Field>
 
               {savedAt && <p className="text-[13px] text-ink-3">Saved.</p>}
+            </div>
+          </section>
+
+          <section className="surface p-5">
+            <h2 className="text-[15px] font-medium">Session behavior</h2>
+            <p className="mt-0.5 text-[13px] text-ink-2">
+              Controls when the flow bot re-engages a visitor who&apos;s already been handed off to a human or
+              reached the end of the flow.
+            </p>
+            <div className="mt-5 space-y-5">
+              <Field
+                label="Restart after inactivity"
+                hint="Minutes of silence after handoff/end before the bot greets the visitor again on their next visit or message."
+              >
+                <input
+                  type="number"
+                  min={1}
+                  max={43200}
+                  defaultValue={bot.sessionTimeoutMinutes}
+                  onBlur={(e) => {
+                    const next = Number(e.target.value);
+                    if (Number.isFinite(next) && next >= 1 && next !== bot.sessionTimeoutMinutes) {
+                      save({ sessionTimeoutMinutes: next });
+                    }
+                  }}
+                  className="input w-32"
+                />
+              </Field>
+
+              <Field
+                label="Restart keywords"
+                hint="Comma-separated words that restart the flow immediately, even before the timeout."
+              >
+                <input
+                  defaultValue={bot.restartKeywords}
+                  onBlur={(e) =>
+                    e.target.value !== bot.restartKeywords && save({ restartKeywords: e.target.value })
+                  }
+                  placeholder="hi, menu, restart, start over"
+                  className="input"
+                />
+              </Field>
+
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[14px] font-medium">Keep collected answers across restarts</p>
+                  <p className="mt-0.5 text-[13px] text-ink-2">
+                    When off, a restarted flow forgets anything it collected earlier in the conversation.
+                  </p>
+                </div>
+                <Toggle
+                  checked={bot.keepVariablesAcrossSessions}
+                  onChange={(next) => save({ keepVariablesAcrossSessions: next })}
+                  label="Keep collected answers across restarts"
+                />
+              </div>
             </div>
           </section>
 
