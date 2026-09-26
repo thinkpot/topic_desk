@@ -21,17 +21,17 @@ const STEPS = [
   },
   {
     title: "Paste one line of code",
-    body: "Your chatbot comes with its own key baked into the snippet. Drop it on your site and the widget appears.",
+    body: "Your chatbot comes with its own key baked into the snippet. Drop it on your site and the live chat widget appears.",
   },
   {
     title: "Reply from Telegram — or your dashboard",
-    body: "Each visitor becomes a topic in your group. Answer from your phone, or turn on dashboard chat to reply without leaving the app.",
+    body: "Each visitor becomes a chat inside your Telegram group. Answer from your phone, or turn on dashboard chat to reply without leaving the app.",
   },
 ];
 
-const PRODUCTIVITY_ICON_PROPS = {
-  width: 40,
-  height: 40,
+const ICON_PROPS = {
+  width: 32,
+  height: 32,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -43,28 +43,28 @@ const PRODUCTIVITY_ICON_PROPS = {
 const PRODUCTIVITY_BENEFITS = [
   {
     title: "Cut first-response time to seconds",
-    body: "Every message opens a topic in Telegram or lands in your dashboard the instant it's sent — no refreshing, no missed pings.",
+    body: "Every message opens a chat in Telegram or lands in your dashboard the instant it's sent — no refreshing, no missed pings.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS}>
+      <svg {...ICON_PROPS}>
         <path d="m22 2-7 20-4-9-9-4 20-7z" />
       </svg>
     ),
   },
   {
     title: "Turn browsers into conversations",
-    body: "See who's on your site right now and reach out first, instead of waiting for them to find the chat bubble.",
+    body: "See who's on your website right now and reach out first, instead of waiting for them to find the chat bubble.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS}>
+      <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="3" />
         <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
       </svg>
     ),
   },
   {
-    title: "Let the bot handle the repetitive part",
+    title: "Let the chatbot handle the repetitive part",
     body: "A no-code flow builder answers the first few questions and only hands off to a human once it's actually needed.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS}>
+      <svg {...ICON_PROPS}>
         <circle cx="6" cy="6" r="2.2" />
         <circle cx="6" cy="18" r="2.2" />
         <circle cx="18" cy="12" r="2.2" />
@@ -77,9 +77,9 @@ const PRODUCTIVITY_BENEFITS = [
 const LIVE_ANALYTICS_CARDS = [
   {
     title: "Real-time presence",
-    body: "Pushed over WebSockets the instant a visitor lands or leaves — no polling, no refresh button.",
+    body: "Pushed over WebSockets the instant a visitor lands or leaves your website — no polling, no refresh button.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+      <svg {...ICON_PROPS} width={26} height={26}>
         <circle cx="12" cy="12" r="3" />
         <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
       </svg>
@@ -87,9 +87,9 @@ const LIVE_ANALYTICS_CARDS = [
   },
   {
     title: "Page & scroll tracking",
-    body: "Current page, scroll depth, referrer, and recent browsing path for every visitor on your site right now.",
+    body: "Current page, scroll depth, referrer, and recent browsing path for every live visitor on your site right now.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+      <svg {...ICON_PROPS} width={26} height={26}>
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M3 9h18M8 4v5" />
       </svg>
@@ -99,7 +99,7 @@ const LIVE_ANALYTICS_CARDS = [
     title: "Message them first",
     body: "On Premium, reach out to a visitor who's still just browsing — straight from the dashboard, before they've said a word.",
     icon: (
-      <svg {...PRODUCTIVITY_ICON_PROPS} width={28} height={28}>
+      <svg {...ICON_PROPS} width={26} height={26}>
         <path d="M4 4h16v12H8l-4 4V4z" />
       </svg>
     ),
@@ -109,18 +109,18 @@ const LIVE_ANALYTICS_CARDS = [
 const FEATURES = [
   {
     icon: "🔀",
-    title: "Flow builder",
-    body: "Start, Message, Question, Buttons, Condition, Handoff, End — drag them onto a canvas and wire them up. No code, no YAML.",
+    title: "No-code flow builder",
+    body: "Start, Message, Question, Buttons, Condition, Handoff, End — drag them onto a canvas and wire up a chatbot. No code, no YAML.",
   },
   {
     icon: "📍",
     title: "Live visitor analytics",
-    body: "Current page, scroll depth, referrer, and recent path for every visitor browsing right now, capped and gated by plan.",
+    body: "Current page, scroll depth, referrer, and recent path for every visitor browsing your website right now, gated by plan.",
   },
   {
     icon: "🎨",
     title: "20 themes, your font",
-    body: "10 light and 10 dark themes, plus font selection — the widget matches your site instead of looking bolted on.",
+    body: "10 light and 10 dark themes, plus font selection — the chat widget matches your site instead of looking bolted on.",
   },
   {
     icon: "⚡",
@@ -131,23 +131,27 @@ const FEATURES = [
 
 const FAQS = [
   {
+    q: "What is a Telegram chat widget?",
+    a: "It's a live chat widget you add to your website that sends every visitor message straight into a Telegram group instead of a separate inbox. Topicdesk is one of these: each visitor gets their own chat inside your group, so your team replies from Telegram itself.",
+  },
+  {
     q: "Do I need to set up a Telegram bot from scratch?",
     a: "You need a bot token from @BotFather and a group with Topics turned on — that's it. The setup wizard checks every permission before your chatbot goes live.",
   },
   {
-    q: "Does this work on my site builder?",
+    q: "Does this live chat widget work on my site builder?",
     a: "Yes. It's one script tag with your API key baked in — WordPress, Shopify, Webflow, Wix, or plain HTML all work the same way, no build step required.",
   },
   {
-    q: "Can I automate answers before a human gets involved?",
-    a: "Yes — the flow builder lets you greet visitors, ask a couple of qualifying questions, and only hand off to a human (via Telegram or your dashboard) once it's actually needed.",
+    q: "Can the chatbot answer questions before a human gets involved?",
+    a: "Yes — the no-code flow builder lets you greet visitors, ask a couple of qualifying questions, and only hand off to a human (via Telegram or your dashboard) once it's actually needed.",
   },
   {
     q: "What's the difference between Telegram replies and dashboard chat?",
-    a: "By default, every conversation opens a topic in your Telegram group and your team replies there. Dashboard chat (Premium) replaces that with a live inbox right in the app, including the ability to message a visitor before they've said anything.",
+    a: "By default, every conversation opens a chat in your Telegram group and your team replies there. Dashboard chat (Premium) replaces that with a live inbox right in the app, including the ability to message a visitor before they've said anything.",
   },
   {
-    q: "How many visitors can I see live at once?",
+    q: "How many live visitors can I see at once?",
     a: "Basic shows your 10 most recent live visitors; Premium shows up to 100, plus the real total if you're over that.",
   },
   {
@@ -167,8 +171,21 @@ async function getPlans() {
 export default async function Home() {
   const plans = await getPlans();
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-surface">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <span className="text-[17px] font-semibold tracking-[-0.02em]">Topicdesk</span>
@@ -190,48 +207,39 @@ export default async function Home() {
         </div>
       </header>
 
-      <section className="relative z-0 overflow-hidden">
-        {/* Soft gradient wash + dotted grid, behind everything in this section only. */}
-        <div className="absolute inset-0 -z-20 bg-[linear-gradient(180deg,#e9e4fb_0%,#f3ecf4_45%,#fbe8e0_100%)]" />
-        <div className="absolute inset-0 -z-10 opacity-[0.35] [background-image:radial-gradient(#00000030_1px,transparent_1px)] [background-size:22px_22px]" />
-        <div className="pointer-events-none absolute -right-16 top-16 -z-10 h-72 w-72 rounded-full bg-gradient-to-br from-[#8f7ff2] to-[#6d4aff] opacity-60 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-[38%] -z-10 h-64 w-64 rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff8a65] opacity-60 blur-3xl" />
-
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 sm:pt-28">
-          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-            <div>
-              <h1 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.02em] sm:text-[52px]">
-                Supercharge your website support with{" "}
-                <span className="text-[#6d4aff]">Telegram</span>
-              </h1>
-              <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-ink-2">
-                Every visitor who messages you opens their own topic in your Telegram group. Your team replies where
-                they already are — no new inbox, no new app to check.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/register" className="rounded-lg bg-ink px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#2b2b2b]">
-                  Get started
-                </Link>
-                <a href="#how" className="rounded-lg border border-ink/60 bg-white/50 px-6 py-3 text-[15px] font-medium text-ink backdrop-blur transition-colors hover:bg-white/80">
-                  Learn more
-                </a>
-              </div>
-              <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
+      {/* Hero */}
+      <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 sm:pt-24">
+        <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <p className="label-eyebrow">Live chat widget · Telegram integration</p>
+            <h1 className="mt-4 text-display sm:text-display-lg">
+              A live chat widget for your website,
+              <br />
+              powered by Telegram.
+            </h1>
+            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
+              Every visitor who messages you opens their own chat inside your Telegram group. Your support team
+              replies from an app they already use — no new inbox, no new app to check.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/register" className="btn-primary px-6 py-3">
+                Create an account
+              </Link>
+              <a href="#how" className="btn-secondary px-6 py-3">
+                See how it works
+              </a>
             </div>
-
-            <Image
-              src="/chatbox.png"
-              alt="Live chat conversation preview"
-              width={1448}
-              height={1086}
-              priority
-              className="w-full max-w-[480px] justify-self-center"
-            />
+            <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
           </div>
 
-          <p className="mt-20 text-center text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-2">
-            Built for growing support teams
-          </p>
+          <Image
+            src="/chatbox.png"
+            alt="Live chat widget conversation preview, relayed to a Telegram group"
+            width={1448}
+            height={1086}
+            priority
+            className="w-full max-w-[480px] justify-self-center"
+          />
         </div>
       </section>
 
@@ -239,8 +247,9 @@ export default async function Home() {
       <section className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
-              Small changes that elevate your <span className="text-[#6d4aff]">customer support productivity</span>
+            <p className="label-eyebrow">Why teams switch</p>
+            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+              Everything you need to run support from Telegram
             </h2>
           </div>
           <div className="mt-14 grid gap-10 sm:grid-cols-3">
@@ -258,74 +267,61 @@ export default async function Home() {
       </section>
 
       {/* Flow builder showcase */}
-      <section className="relative overflow-hidden bg-[#0a0a0f] py-24">
-        <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-[#6d4aff] opacity-20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-[#ff8a65] opacity-15 blur-3xl" />
+      <section className="mx-auto max-w-6xl px-6 py-20 text-center">
+        <p className="label-eyebrow">No-code chatbot builder</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+          Build a no-code chatbot flow for your website
+        </h2>
+        <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
+          Greet a visitor, ask a qualifying question, branch on the answer, hand off to a human — wire it all up on a
+          canvas, no developer required.
+        </p>
 
-        <div className="relative mx-auto max-w-6xl px-6 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[#a78bfa]">
-            No code, drag &amp; drop
-          </p>
-          <h2 className="mt-4 text-[30px] font-bold tracking-[-0.025em] text-white sm:text-[36px]">
-            Build your bot&apos;s flow, visually
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-[15.5px] leading-relaxed text-white/60">
-            Greet a visitor, ask a question, branch on the answer, hand off to a human — wire it all up on a canvas,
-            no code required.
-          </p>
-
-          <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              <span className="ml-2 text-[12px] text-ink-3">Flow builder</span>
-            </div>
-            <Image
-              src="/flowbuilder.png"
-              alt="The flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
-              width={3500}
-              height={2058}
-              className="w-full"
-            />
+        <div className="surface mx-auto mt-10 max-w-5xl overflow-hidden shadow-card">
+          <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+            <span className="ml-2 text-[12px] text-ink-3">Flow builder</span>
           </div>
+          <Image
+            src="/flowbuilder.png"
+            alt="The no-code flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
+            width={3500}
+            height={2058}
+            className="w-full"
+          />
+        </div>
 
-          <div className="mt-10">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8f7ff2] to-[#ff8a65] px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition-transform hover:scale-[1.02]"
-            >
-              Create an account →
-            </Link>
-            <p className="mt-3 text-[13px] text-white/50">Setup takes about five minutes. No credit card required.</p>
-          </div>
+        <div className="mt-8">
+          <Link href="/register" className="btn-primary px-6 py-3">
+            Create an account
+          </Link>
+          <p className="mt-3 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
         </div>
       </section>
 
       {/* Live analytics showcase */}
-      <section className="relative overflow-hidden bg-[#0a0a0f] py-24">
-        <div className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-[#4ade80] opacity-10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-24 bottom-10 h-72 w-72 rounded-full bg-[#6d4aff] opacity-15 blur-3xl" />
-
-        <div className="relative mx-auto max-w-6xl px-6">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
-            <h2 className="text-[32px] font-bold leading-tight tracking-[-0.025em] text-white sm:text-[40px]">
-              See every visitor,{" "}
-              <span className="bg-gradient-to-r from-[#4ade80] to-[#6d4aff] bg-clip-text text-transparent">
-                the moment they arrive
-              </span>
-            </h2>
-            <p className="text-[15.5px] leading-relaxed text-white/60">
-              Everyone currently browsing a site with your widget installed, updated in real time — current page,
-              scroll depth, and recent path, whether or not they've said a word.
+      <section className="border-y border-line bg-plane">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div>
+              <p className="label-eyebrow">Live visitor tracking</p>
+              <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+                See who&apos;s on your website in real time
+              </h2>
+            </div>
+            <p className="text-[15px] leading-relaxed text-ink-2">
+              Everyone currently browsing a site with your widget installed, updated in real time over WebSockets —
+              current page, scroll depth, and recent path, whether or not they&apos;ve said a word.
             </p>
           </div>
 
-          <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+          <div className="surface mx-auto mt-10 max-w-5xl overflow-hidden shadow-card">
             <div className="flex items-center gap-2 border-b border-line bg-surface-sunken px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+              <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
+              <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
               <span className="ml-2 text-[12px] text-ink-3">Live visitors</span>
             </div>
             <Image
@@ -337,14 +333,14 @@ export default async function Home() {
             />
           </div>
 
-          <div className="mx-auto mt-14 grid max-w-5xl gap-5 sm:grid-cols-3">
+          <div className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-3">
             {LIVE_ANALYTICS_CARDS.map((c) => (
-              <div key={c.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-white/[0.06] text-[#8ee6a8]">
+              <div key={c.title} className="surface p-6">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-surface-sunken text-ink-2">
                   {c.icon}
                 </span>
-                <h3 className="mt-4 text-[16px] font-semibold text-white">{c.title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-white/55">{c.body}</p>
+                <h3 className="mt-4 text-[15.5px] font-semibold">{c.title}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{c.body}</p>
               </div>
             ))}
           </div>
@@ -354,7 +350,9 @@ export default async function Home() {
       {/* How it works */}
       <section id="how" className="mx-auto max-w-6xl px-6 py-20">
         <p className="label-eyebrow">Setup</p>
-        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Three steps to live chat</h2>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+          Three steps to add live chat to your website
+        </h2>
         <div className="mt-10 grid gap-8 sm:grid-cols-3">
           {STEPS.map((step, i) => (
             <div key={step.title}>
@@ -388,14 +386,19 @@ export default async function Home() {
       {/* Works everywhere */}
       <section className="mx-auto max-w-6xl px-6 py-20 text-center">
         <p className="label-eyebrow">Compatibility</p>
-        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Works on any website</h2>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
+          Works with any website builder
+        </h2>
         <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
-          One script tag, no build step. If you can paste HTML before <code className="rounded bg-surface-sunken px-1.5 py-0.5 text-[13px]">&lt;/body&gt;</code>,
-          it works.
+          One script tag, no build step. If you can paste HTML before{" "}
+          <code className="rounded bg-surface-sunken px-1.5 py-0.5 text-[13px]">&lt;/body&gt;</code>, it works.
         </p>
         <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
           {["WordPress", "Shopify", "Webflow", "Wix", "Squarespace", "Plain HTML"].map((platform) => (
-            <span key={platform} className="rounded-full border border-line bg-surface px-4 py-2 text-[13.5px] font-medium text-ink-2">
+            <span
+              key={platform}
+              className="rounded-full border border-line bg-surface px-4 py-2 text-[13.5px] font-medium text-ink-2"
+            >
               {platform}
             </span>
           ))}
@@ -429,10 +432,7 @@ export default async function Home() {
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
           {plans.map((plan, i) => (
-            <div
-              key={plan.id}
-              className={`surface p-7 ${i === plans.length - 1 ? "ring-1 ring-ink" : ""}`}
-            >
+            <div key={plan.id} className={`surface p-7 ${i === plans.length - 1 ? "ring-1 ring-ink" : ""}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-[17px] font-semibold">{plan.name}</h3>
                 {i === plans.length - 1 && (
@@ -481,23 +481,34 @@ export default async function Home() {
             <div>
               <span className="text-[15px] font-semibold tracking-[-0.02em]">Topicdesk</span>
               <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-ink-3">
-                A live chat widget that hands every conversation to your Telegram group, or your dashboard.
+                A Telegram-powered live chat widget for websites, with a no-code chatbot builder and real-time
+                visitor analytics.
               </p>
             </div>
             <div className="flex gap-12">
               <div>
                 <p className="label-eyebrow">Product</p>
                 <div className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink-2">
-                  <a href="#features" className="hover:text-ink">Features</a>
-                  <a href="#how" className="hover:text-ink">How it works</a>
-                  <a href="#pricing" className="hover:text-ink">Pricing</a>
+                  <a href="#features" className="hover:text-ink">
+                    Features
+                  </a>
+                  <a href="#how" className="hover:text-ink">
+                    How it works
+                  </a>
+                  <a href="#pricing" className="hover:text-ink">
+                    Pricing
+                  </a>
                 </div>
               </div>
               <div>
                 <p className="label-eyebrow">Account</p>
                 <div className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink-2">
-                  <Link href="/login" className="hover:text-ink">Log in</Link>
-                  <Link href="/register" className="hover:text-ink">Create account</Link>
+                  <Link href="/login" className="hover:text-ink">
+                    Log in
+                  </Link>
+                  <Link href="/register" className="hover:text-ink">
+                    Create account
+                  </Link>
                 </div>
               </div>
             </div>
@@ -509,9 +520,7 @@ export default async function Home() {
       {/* Dogfooding: talk to visitors of our own marketing site through our own product.
           The API key is env-driven (set in the deployment's own dashboard) rather than
           hardcoded, since each deployment has its own database and its own chatbot. */}
-      {env.supportChatbotApiKey && (
-        <script src="/widget.js" data-api-key={env.supportChatbotApiKey} async />
-      )}
+      {env.supportChatbotApiKey && <script src="/widget.js" data-api-key={env.supportChatbotApiKey} async />}
     </div>
   );
 }

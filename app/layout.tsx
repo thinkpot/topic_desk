@@ -3,8 +3,15 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "ChatWidget — Telegram-powered live chat for your website",
-  description: "Add a live chat widget to your website that delivers messages straight to a Telegram group.",
+  title: "Topicdesk — Telegram Live Chat Widget for Your Website",
+  description:
+    "Add a live chat widget to your website that relays every visitor message to a Telegram group. Includes a no-code chatbot flow builder and real-time live visitor analytics.",
+  openGraph: {
+    title: "Topicdesk — Telegram Live Chat Widget for Your Website",
+    description:
+      "A live chat widget powered by Telegram, with a no-code chatbot builder and real-time visitor analytics.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
