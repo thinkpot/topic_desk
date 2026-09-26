@@ -6,6 +6,13 @@ import { formatLimit, formatPriceINR } from "@/lib/plans";
 // Rendered per request so the build never needs a database connection.
 export const dynamic = "force-dynamic";
 
+const NAV_LINKS = [
+  { href: "#features", label: "Features" },
+  { href: "#how", label: "How it works" },
+  { href: "#pricing", label: "Pricing" },
+  { href: "#faq", label: "FAQ" },
+];
+
 const STEPS = [
   {
     title: "Connect a Telegram group",
@@ -16,8 +23,81 @@ const STEPS = [
     body: "Your chatbot comes with its own key baked into the snippet. Drop it on your site and the widget appears.",
   },
   {
-    title: "Reply from Telegram",
-    body: "Each visitor becomes a topic in your group. Answer from your phone — the reply lands back in their chat window.",
+    title: "Reply from Telegram — or your dashboard",
+    body: "Each visitor becomes a topic in your group. Answer from your phone, or turn on dashboard chat to reply without leaving the app.",
+  },
+];
+
+const VALUE_PROPS = [
+  {
+    tag: "01",
+    title: "Reply from where your team already lives",
+    body: "No new inbox to babysit. Every conversation lands as a topic in your Telegram group, so support happens in the app your team already has open all day.",
+  },
+  {
+    tag: "02",
+    title: "Automate the first reply with a no-code flow builder",
+    body: "Drag together a greeting, a couple of questions, and a handoff — the bot handles the repetitive part, then hands a warm lead straight to a human.",
+  },
+  {
+    tag: "03",
+    title: "See who's on your site right now",
+    body: "The Live tab shows every visitor currently browsing — what page, how far they've scrolled, how long they've been there — updated instantly, not on a timer.",
+  },
+  {
+    tag: "04",
+    title: "Message visitors first, before they even ask",
+    body: "On Premium, reach out to someone still browsing straight from your dashboard — no need to wait for them to open the chat.",
+  },
+];
+
+const FEATURES = [
+  {
+    icon: "🔀",
+    title: "Flow builder",
+    body: "Start, Message, Question, Buttons, Condition, Handoff, End — drag them onto a canvas and wire them up. No code, no YAML.",
+  },
+  {
+    icon: "📍",
+    title: "Live visitor analytics",
+    body: "Current page, scroll depth, referrer, and recent path for every visitor browsing right now, capped and gated by plan.",
+  },
+  {
+    icon: "🎨",
+    title: "20 themes, your font",
+    body: "10 light and 10 dark themes, plus font selection — the widget matches your site instead of looking bolted on.",
+  },
+  {
+    icon: "⚡",
+    title: "Real-time delivery",
+    body: "Built on WebSockets: replies, presence, and live analytics push instantly — no waiting on the next refresh.",
+  },
+];
+
+const FAQS = [
+  {
+    q: "Do I need to set up a Telegram bot from scratch?",
+    a: "You need a bot token from @BotFather and a group with Topics turned on — that's it. The setup wizard checks every permission before your chatbot goes live.",
+  },
+  {
+    q: "Does this work on my site builder?",
+    a: "Yes. It's one script tag with your API key baked in — WordPress, Shopify, Webflow, Wix, or plain HTML all work the same way, no build step required.",
+  },
+  {
+    q: "Can I automate answers before a human gets involved?",
+    a: "Yes — the flow builder lets you greet visitors, ask a couple of qualifying questions, and only hand off to a human (via Telegram or your dashboard) once it's actually needed.",
+  },
+  {
+    q: "What's the difference between Telegram replies and dashboard chat?",
+    a: "By default, every conversation opens a topic in your Telegram group and your team replies there. Dashboard chat (Premium) replaces that with a live inbox right in the app, including the ability to message a visitor before they've said anything.",
+  },
+  {
+    q: "How many visitors can I see live at once?",
+    a: "Basic shows your 10 most recent live visitors; Premium shows up to 100, plus the real total if you're over that.",
+  },
+  {
+    q: "Is there a limit on chatbots or conversations?",
+    a: "Basic includes one chatbot and 3,000 visitor conversations a month. Premium is unlimited on both.",
   },
 ];
 
@@ -37,21 +117,28 @@ export default async function Home() {
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <span className="text-[17px] font-semibold tracking-[-0.02em]">Topicdesk</span>
-          <nav className="flex items-center gap-2">
+          <nav className="hidden items-center gap-6 md:flex">
+            {NAV_LINKS.map((link) => (
+              <a key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2">
             <Link href="/login" className="btn-ghost btn-sm">
               Log in
             </Link>
             <Link href="/register" className="btn-primary btn-sm">
               Get started
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 sm:pt-24">
         <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <p className="label-eyebrow">Live chat · Telegram</p>
+            <p className="label-eyebrow">Live chat · Telegram · Real-time</p>
             <h1 className="mt-4 text-display sm:text-display-lg">
               Your website&apos;s chat,
               <br />
@@ -65,11 +152,11 @@ export default async function Home() {
               <Link href="/register" className="btn-primary px-6 py-3">
                 Create an account
               </Link>
-              <Link href="#how" className="btn-secondary px-6 py-3">
+              <a href="#how" className="btn-secondary px-6 py-3">
                 See how it works
-              </Link>
+              </a>
             </div>
-            <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes.</p>
+            <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
           </div>
 
           <div className="relative">
@@ -118,25 +205,99 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="how" className="border-y border-line bg-plane">
+      {/* Value propositions */}
+      <section className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="text-[28px] font-semibold tracking-[-0.025em]">Three steps to live chat</h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
-            {STEPS.map((step, i) => (
-              <div key={step.title}>
-                <span className="metric flex h-8 w-8 items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-white">
-                  {i + 1}
-                </span>
-                <h3 className="mt-4 text-[17px] font-semibold">{step.title}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{step.body}</p>
+          <p className="label-eyebrow">Why teams switch</p>
+          <h2 className="mt-3 max-w-xl text-[28px] font-semibold tracking-[-0.025em]">
+            Built around how support actually happens
+          </h2>
+          <div className="mt-10 grid gap-8 sm:grid-cols-2">
+            {VALUE_PROPS.map((v) => (
+              <div key={v.tag} className="surface p-6">
+                <span className="metric text-[13px] font-semibold text-ink-3">{v.tag}</span>
+                <h3 className="mt-2 text-[17px] font-semibold">{v.title}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">{v.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <h2 className="text-[28px] font-semibold tracking-[-0.025em]">Pricing</h2>
+      {/* How it works */}
+      <section id="how" className="mx-auto max-w-6xl px-6 py-20">
+        <p className="label-eyebrow">Setup</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Three steps to live chat</h2>
+        <div className="mt-10 grid gap-8 sm:grid-cols-3">
+          {STEPS.map((step, i) => (
+            <div key={step.title}>
+              <span className="metric flex h-8 w-8 items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-white">
+                {i + 1}
+              </span>
+              <h3 className="mt-4 text-[17px] font-semibold">{step.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="border-y border-line bg-plane">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <p className="label-eyebrow">Everything included</p>
+          <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">More than a chat bubble</h2>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="surface p-6">
+                <span className="text-[26px]">{f.icon}</span>
+                <h3 className="mt-3 text-[15.5px] font-semibold">{f.title}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{f.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Works everywhere */}
+      <section className="mx-auto max-w-6xl px-6 py-20 text-center">
+        <p className="label-eyebrow">Compatibility</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Works on any website</h2>
+        <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
+          One script tag, no build step. If you can paste HTML before <code className="rounded bg-surface-sunken px-1.5 py-0.5 text-[13px]">&lt;/body&gt;</code>,
+          it works.
+        </p>
+        <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
+          {["WordPress", "Shopify", "Webflow", "Wix", "Squarespace", "Plain HTML"].map((platform) => (
+            <span key={platform} className="rounded-full border border-line bg-surface px-4 py-2 text-[13.5px] font-medium text-ink-2">
+              {platform}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="border-y border-line bg-plane">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <p className="label-eyebrow">Questions</p>
+          <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Frequently asked</h2>
+          <div className="mt-8 divide-y divide-line border-t border-line">
+            {FAQS.map((item) => (
+              <details key={item.q} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-medium text-ink">
+                  {item.q}
+                  <span className="shrink-0 text-ink-3 transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 text-[14.5px] leading-relaxed text-ink-2">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
+        <p className="label-eyebrow">Pricing</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Simple, per account</h2>
         <p className="mt-2 text-[15px] text-ink-2">Billed monthly. Cancel whenever you like.</p>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
@@ -167,9 +328,13 @@ export default async function Home() {
                   <span className="text-ink-2">Visitors / month</span>
                   <span className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</span>
                 </li>
+                <li className="flex justify-between border-b border-line pb-2.5">
+                  <span className="text-ink-2">Live visitors shown</span>
+                  <span className="metric font-medium">{plan.maxLiveVisitors}</span>
+                </li>
                 <li className="flex justify-between">
-                  <span className="text-ink-2">Telegram topics</span>
-                  <span className="font-medium">Included</span>
+                  <span className="text-ink-2">Dashboard chat</span>
+                  <span className="font-medium">{plan.supportsDashboardChat ? "Included" : "—"}</span>
                 </li>
               </ul>
               <Link href="/register" className="btn-primary mt-7 w-full">
@@ -184,16 +349,33 @@ export default async function Home() {
       </section>
 
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-[13px] text-ink-3">
-          <span>Topicdesk</span>
-          <div className="flex gap-5">
-            <Link href="/login" className="hover:text-ink">
-              Log in
-            </Link>
-            <Link href="/register" className="hover:text-ink">
-              Create account
-            </Link>
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <div className="flex flex-wrap items-start justify-between gap-8">
+            <div>
+              <span className="text-[15px] font-semibold tracking-[-0.02em]">Topicdesk</span>
+              <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-ink-3">
+                A live chat widget that hands every conversation to your Telegram group, or your dashboard.
+              </p>
+            </div>
+            <div className="flex gap-12">
+              <div>
+                <p className="label-eyebrow">Product</p>
+                <div className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink-2">
+                  <a href="#features" className="hover:text-ink">Features</a>
+                  <a href="#how" className="hover:text-ink">How it works</a>
+                  <a href="#pricing" className="hover:text-ink">Pricing</a>
+                </div>
+              </div>
+              <div>
+                <p className="label-eyebrow">Account</p>
+                <div className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink-2">
+                  <Link href="/login" className="hover:text-ink">Log in</Link>
+                  <Link href="/register" className="hover:text-ink">Create account</Link>
+                </div>
+              </div>
+            </div>
           </div>
+          <p className="mt-10 text-[12.5px] text-ink-3">© {new Date().getFullYear()} Topicdesk. All rights reserved.</p>
         </div>
       </footer>
 
