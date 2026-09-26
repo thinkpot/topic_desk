@@ -73,6 +73,10 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         input: null,
       }).catch(() => ({ botMessages: [] as Awaited<ReturnType<typeof prisma.message.create>>[] }));
 
+      for (const m of botMessages) {
+        emitChatMessageToDashboard(bot.userId, bot.id, visitorId, toClientMessage(m));
+      }
+
       return withCors(
         NextResponse.json({
           conversationId: conversation.id,
@@ -93,7 +97,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const flowForRestart = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
   if (needsSessionRestart({ chatbot: bot, conversation, flowEnabled: !!flowForRestart?.isEnabled })) {
     conversation = await restartSession(bot, conversation);
-    await runConversationTurn({
+    const restartResult = await runConversationTurn({
       bot,
       graph: { nodes: flowForRestart!.nodes, edges: flowForRestart!.edges } as unknown as FlowGraph,
       conversation,
@@ -101,6 +105,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       visitorName: conversation.visitorName,
       input: null,
     }).catch(() => null);
+    for (const m of restartResult?.botMessages ?? []) {
+      emitChatMessageToDashboard(bot.userId, bot.id, visitorId, toClientMessage(m));
+    }
   }
 
   const afterDate = after ? new Date(after) : new Date(0);

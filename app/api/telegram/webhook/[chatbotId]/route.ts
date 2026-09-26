@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { emitChatMessageToWidget, emitChatMessageToDashboard } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ chatbotId: string }> };
 
@@ -12,8 +13,11 @@ interface TelegramUpdate {
   };
 }
 
-// Telegram calls this when someone replies inside a visitor's topic in the group.
-// The widget picks the reply up on its next poll (no persistent connection needed).
+// Telegram calls this when someone replies inside a visitor's topic in the
+// group. Pushed to the widget and the dashboard's Live tab over the socket
+// (see server.ts) so it lands in real time, same as a dashboard-chat reply;
+// the widget's own HTTP polling is still there as a fallback if the socket
+// isn't connected.
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const { chatbotId } = await params;
   const secretHeader = req.headers.get("x-telegram-bot-api-secret-token");
@@ -41,8 +45,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   });
   if (!conversation) return NextResponse.json({ ok: true });
 
-  await prisma.message.create({ data: { conversationId: conversation.id, sender: "AGENT", text: message.text } });
+  const created = await prisma.message.create({
+    data: { conversationId: conversation.id, sender: "AGENT", text: message.text },
+  });
   await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
+
+  const payload = { id: created.id, sender: created.sender, text: created.text, createdAt: created.createdAt };
+  emitChatMessageToWidget(chatbotId, conversation.visitorId, payload);
+  emitChatMessageToDashboard(bot.userId, chatbotId, conversation.visitorId, payload);
 
   return NextResponse.json({ ok: true });
 }
