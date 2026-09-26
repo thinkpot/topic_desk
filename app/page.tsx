@@ -29,26 +29,48 @@ const STEPS = [
   },
 ];
 
-const VALUE_PROPS = [
+const PRODUCTIVITY_ICON_PROPS = {
+  width: 40,
+  height: 40,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+const PRODUCTIVITY_BENEFITS = [
   {
-    tag: "01",
-    title: "Reply from where your team already lives",
-    body: "No new inbox to babysit. Every conversation lands as a topic in your Telegram group, so support happens in the app your team already has open all day.",
+    title: "Cut first-response time to seconds",
+    body: "Every message opens a topic in Telegram or lands in your dashboard the instant it's sent — no refreshing, no missed pings.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS}>
+        <path d="m22 2-7 20-4-9-9-4 20-7z" />
+      </svg>
+    ),
   },
   {
-    tag: "02",
-    title: "Automate the first reply with a no-code flow builder",
-    body: "Drag together a greeting, a couple of questions, and a handoff — the bot handles the repetitive part, then hands a warm lead straight to a human.",
+    title: "Turn browsers into conversations",
+    body: "See who's on your site right now and reach out first, instead of waiting for them to find the chat bubble.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+      </svg>
+    ),
   },
   {
-    tag: "03",
-    title: "See who's on your site right now",
-    body: "The Live tab shows every visitor currently browsing — what page, how far they've scrolled, how long they've been there — updated instantly, not on a timer.",
-  },
-  {
-    tag: "04",
-    title: "Message visitors first, before they even ask",
-    body: "On Premium, reach out to someone still browsing straight from your dashboard — no need to wait for them to open the chat.",
+    title: "Let the bot handle the repetitive part",
+    body: "A no-code flow builder answers the first few questions and only hands off to a human once it's actually needed.",
+    icon: (
+      <svg {...PRODUCTIVITY_ICON_PROPS}>
+        <circle cx="6" cy="6" r="2.2" />
+        <circle cx="6" cy="18" r="2.2" />
+        <circle cx="18" cy="12" r="2.2" />
+        <path d="M8.2 6h3.8a4 4 0 0 1 4 4v0M8.2 18h3.8a4 4 0 0 0 4-4v0" />
+      </svg>
+    ),
   },
 ];
 
@@ -181,19 +203,22 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Value propositions */}
+      {/* Productivity benefits */}
       <section className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="label-eyebrow">Why teams switch</p>
-          <h2 className="mt-3 max-w-xl text-[28px] font-semibold tracking-[-0.025em]">
-            Built around how support actually happens
-          </h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-2">
-            {VALUE_PROPS.map((v) => (
-              <div key={v.tag} className="surface p-6">
-                <span className="metric text-[13px] font-semibold text-ink-3">{v.tag}</span>
-                <h3 className="mt-2 text-[17px] font-semibold">{v.title}</h3>
-                <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">{v.body}</p>
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
+              Small changes that elevate your <span className="text-[#6d4aff]">customer support productivity</span>
+            </h2>
+          </div>
+          <div className="mt-14 grid gap-10 sm:grid-cols-3">
+            {PRODUCTIVITY_BENEFITS.map((b) => (
+              <div key={b.title} className="text-center">
+                <div className="mx-auto flex h-32 w-full max-w-[220px] items-center justify-center rounded-xl bg-surface-sunken text-ink-2">
+                  {b.icon}
+                </div>
+                <h3 className="mt-5 text-[17px] font-semibold">{b.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{b.body}</p>
               </div>
             ))}
           </div>
