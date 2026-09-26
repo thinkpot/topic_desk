@@ -135,73 +135,50 @@ export default async function Home() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 sm:pt-24">
-        <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <p className="label-eyebrow">Live chat · Telegram · Real-time</p>
-            <h1 className="mt-4 text-display sm:text-display-lg">
-              Your website&apos;s chat,
-              <br />
-              answered from Telegram.
-            </h1>
-            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
-              Every visitor who messages you opens their own topic in your Telegram group. Your team replies where
-              they already are — no new inbox, no new app to check.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/register" className="btn-primary px-6 py-3">
-                Create an account
-              </Link>
-              <a href="#how" className="btn-secondary px-6 py-3">
-                See how it works
-              </a>
+      <section className="relative z-0 overflow-hidden">
+        {/* Soft gradient wash + dotted grid, behind everything in this section only. */}
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(180deg,#e9e4fb_0%,#f3ecf4_45%,#fbe8e0_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.35] [background-image:radial-gradient(#00000030_1px,transparent_1px)] [background-size:22px_22px]" />
+        <div className="pointer-events-none absolute -right-16 top-16 -z-10 h-72 w-72 rounded-full bg-gradient-to-br from-[#8f7ff2] to-[#6d4aff] opacity-60 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-[38%] -z-10 h-64 w-64 rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff8a65] opacity-60 blur-3xl" />
+
+        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 sm:pt-28">
+          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <h1 className="text-[40px] font-extrabold leading-[1.08] tracking-[-0.02em] sm:text-[52px]">
+                Supercharge your website support with{" "}
+                <span className="text-[#6d4aff]">Telegram</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-ink-2">
+                Every visitor who messages you opens their own topic in your Telegram group. Your team replies where
+                they already are — no new inbox, no new app to check.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/register" className="rounded-lg bg-ink px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-[#2b2b2b]">
+                  Get started
+                </Link>
+                <a href="#how" className="rounded-lg border border-ink/60 bg-white/50 px-6 py-3 text-[15px] font-medium text-ink backdrop-blur transition-colors hover:bg-white/80">
+                  Learn more
+                </a>
+              </div>
+              <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
             </div>
-            <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
+
+            {/*
+              Placeholder for the generated chatbot illustration — swap this div
+              for <img src="/hero-chat.png" alt="" className="w-full rounded-2xl" />
+              once the image is ready.
+            */}
+            <div className="relative flex aspect-[4/3] w-full items-center justify-center rounded-2xl border-2 border-dashed border-[#6d4aff]/30 bg-white/40 p-6 text-center backdrop-blur">
+              <p className="text-[13px] text-ink-3">
+                Chatbot illustration goes here — drop in the generated image to replace this box.
+              </p>
+            </div>
           </div>
 
-          <div className="relative">
-            <div className="surface overflow-hidden shadow-card">
-              <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-                <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-                <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-                <span className="ml-2 text-[12px] text-ink-3">yourstore.com</span>
-              </div>
-              <div className="relative h-[290px] bg-surface-sunken p-4">
-                <div className="absolute bottom-4 right-4 w-[228px] overflow-hidden rounded-lg border border-line bg-surface shadow-pop">
-                  <div className="bg-ink px-3 py-2.5 text-[13px] font-medium text-white">Support</div>
-                  <div className="space-y-2 p-3">
-                    <p className="max-w-[85%] rounded-lg rounded-bl-[4px] border border-line bg-surface px-2.5 py-1.5 text-[12px] leading-snug">
-                      Hi! How can we help you today?
-                    </p>
-                    <p className="ml-auto max-w-[85%] rounded-lg rounded-br-[4px] bg-ink px-2.5 py-1.5 text-[12px] leading-snug text-white">
-                      Do you ship to Pune?
-                    </p>
-                    <p className="max-w-[85%] rounded-lg rounded-bl-[4px] border border-line bg-surface px-2.5 py-1.5 text-[12px] leading-snug">
-                      Yes — 2 day delivery.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="surface absolute bottom-8 -left-5 hidden w-[210px] p-3 shadow-pop sm:block">
-              <p className="label-eyebrow">Telegram group</p>
-              <ul className="mt-2 space-y-1.5 text-[12.5px]">
-                <li className="flex items-center justify-between gap-2">
-                  <span className="truncate">Visitor · 8f21c4</span>
-                  <span className="text-ink-3">now</span>
-                </li>
-                <li className="flex items-center justify-between gap-2 text-ink-3">
-                  <span className="truncate">Visitor · 22ab90</span>
-                  <span>3m</span>
-                </li>
-                <li className="flex items-center justify-between gap-2 text-ink-3">
-                  <span className="truncate">Priya · 71dd02</span>
-                  <span>1h</span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <p className="mt-20 text-center text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-2">
+            Built for growing support teams
+          </p>
         </div>
       </section>
 
