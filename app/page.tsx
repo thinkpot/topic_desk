@@ -108,24 +108,78 @@ const LIVE_ANALYTICS_CARDS = [
 
 const FEATURES = [
   {
-    icon: "🔀",
     title: "No-code flow builder",
     body: "Start, Message, Question, Buttons, Condition, Handoff, End — drag them onto a canvas and wire up a chatbot. No code, no YAML.",
+    visual: (
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="rounded-lg border border-line-strong bg-surface px-4 py-2 text-[12px] font-medium shadow-card">
+          Start
+        </div>
+        <div className="h-4 w-px bg-line-strong" />
+        <div className="rounded-lg border border-line-strong bg-surface px-4 py-2 text-[12px] font-medium shadow-card">
+          Message
+        </div>
+        <div className="h-4 w-px bg-line-strong" />
+        <div className="rounded-lg border border-line-strong bg-ink px-4 py-2 text-[12px] font-medium text-white shadow-card">
+          Hand off
+        </div>
+      </div>
+    ),
   },
   {
-    icon: "📍",
     title: "Live visitor analytics",
     body: "Current page, scroll depth, referrer, and recent path for every visitor browsing your website right now, gated by plan.",
+    visual: (
+      <div className="w-full max-w-[200px] space-y-2">
+        <div className="flex items-center justify-between rounded-md border border-line bg-surface px-3 py-2 text-[11.5px] shadow-card">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-positive" />
+            Visitor · 8f21c4
+          </span>
+          <span className="text-ink-3">now</span>
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-line bg-surface px-3 py-2 text-[11.5px] text-ink-3">
+          <span>Visitor · 22ab90</span>
+          <span>3m</span>
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-line bg-surface px-3 py-2 text-[11.5px] text-ink-3">
+          <span>Priya · 71dd02</span>
+          <span>1h</span>
+        </div>
+      </div>
+    ),
   },
   {
-    icon: "🎨",
     title: "20 themes, your font",
     body: "10 light and 10 dark themes, plus font selection — the chat widget matches your site instead of looking bolted on.",
+    visual: (
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          {["#ffffff", "#f7f3ec", "#eef2fb", "#fbe9e2", "#eafaf0"].map((c) => (
+            <span key={c} className="h-8 w-8 rounded-full border border-line-strong" style={{ background: c }} />
+          ))}
+        </div>
+        <div className="flex gap-2">
+          {["#0a0a0a", "#171923", "#1c1440", "#1a1a1a", "#111827"].map((c) => (
+            <span key={c} className="h-8 w-8 rounded-full border border-line-strong" style={{ background: c }} />
+          ))}
+        </div>
+      </div>
+    ),
   },
   {
-    icon: "⚡",
     title: "Real-time delivery",
     body: "Built on WebSockets: replies, presence, and live analytics push instantly — no waiting on the next refresh.",
+    visual: (
+      <div className="w-full max-w-[200px] space-y-2">
+        <p className="ml-auto max-w-[80%] rounded-lg rounded-br-[4px] bg-ink px-3 py-2 text-[11.5px] text-white shadow-card">
+          Do you ship to Pune?
+        </p>
+        <p className="flex max-w-[85%] items-center gap-1.5 rounded-lg rounded-bl-[4px] border border-line bg-surface px-3 py-2 text-[11.5px] shadow-card">
+          <span aria-hidden>⚡</span> Yes — 2 day delivery.
+        </p>
+      </div>
+    ),
   },
 ];
 
@@ -370,14 +424,18 @@ export default async function Home() {
       {/* Features */}
       <section id="features" className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="label-eyebrow">Everything included</p>
-          <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">More than a chat bubble</h2>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="text-center">
+            <p className="label-eyebrow">Everything included</p>
+            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">More than a chat bubble</h2>
+          </div>
+          <div className="mx-auto mt-14 grid max-w-3xl gap-x-10 gap-y-14 sm:grid-cols-2">
             {FEATURES.map((f) => (
-              <div key={f.title} className="surface p-6">
-                <span className="text-[26px]">{f.icon}</span>
-                <h3 className="mt-3 text-[15.5px] font-semibold">{f.title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{f.body}</p>
+              <div key={f.title} className="text-center">
+                <h3 className="text-[16px] font-semibold">{f.title}</h3>
+                <p className="mx-auto mt-1.5 max-w-[280px] text-[13.5px] leading-relaxed text-ink-2">{f.body}</p>
+                <div className="mx-auto mt-5 flex aspect-square w-full max-w-[240px] items-center justify-center rounded-2xl border border-line bg-surface p-6">
+                  {f.visual}
+                </div>
               </div>
             ))}
           </div>
