@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { formatLimit, formatPriceINR } from "@/lib/plans";
@@ -164,16 +165,14 @@ export default async function Home() {
               <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
             </div>
 
-            {/*
-              Placeholder for the generated chatbot illustration — swap this div
-              for <img src="/hero-chat.png" alt="" className="w-full rounded-2xl" />
-              once the image is ready.
-            */}
-            <div className="relative flex aspect-[4/3] w-full items-center justify-center rounded-2xl border-2 border-dashed border-[#6d4aff]/30 bg-white/40 p-6 text-center backdrop-blur">
-              <p className="text-[13px] text-ink-3">
-                Chatbot illustration goes here — drop in the generated image to replace this box.
-              </p>
-            </div>
+            <Image
+              src="/chatbox.png"
+              alt="Live chat conversation preview"
+              width={1448}
+              height={1086}
+              priority
+              className="w-full max-w-[480px] justify-self-center"
+            />
           </div>
 
           <p className="mt-20 text-center text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-2">
