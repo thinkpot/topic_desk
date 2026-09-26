@@ -156,7 +156,7 @@ const FAQS = [
   },
   {
     q: "Is there a limit on chatbots or conversations?",
-    a: "Basic includes one chatbot and 3,000 visitor conversations a month. Premium includes 10 chatbots and 10,000 visitor conversations a month.",
+    a: "Free includes one chatbot and 500 visitor conversations a month. Basic includes five chatbots and 3,000 visitor conversations a month. Premium includes 10 chatbots and 10,000 visitor conversations a month.",
   },
 ];
 

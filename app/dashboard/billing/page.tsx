@@ -139,7 +139,7 @@ export default function BillingPage() {
             </div>
           )}
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
+          <div className="grid gap-5 sm:grid-cols-2 lg:max-w-4xl lg:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = user?.plan.id === plan.id;
               const discount = yearlyDiscountPercent(plan.priceINR, plan.priceYearlyINR);
