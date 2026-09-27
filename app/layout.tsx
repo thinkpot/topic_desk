@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Topicdesk — Telegram Live Chat Widget for Your Website",
+  title: `Telegram Live Chat Widget for Your Website | ${BRAND_NAME}`,
   description:
-    "Add a live chat widget to your website that relays every visitor message to a Telegram group. Includes a no-code chatbot flow builder and real-time live visitor analytics.",
+    "Add Telegram live chat to your website with one script tag. Visitor chats go to your Telegram group. No-code chatbot, live visitor tracking. Free 3-day trial.",
   openGraph: {
-    title: "Topicdesk — Telegram Live Chat Widget for Your Website",
+    title: `Telegram Live Chat Widget for Your Website | ${BRAND_NAME}`,
     description:
-      "A live chat widget powered by Telegram, with a no-code chatbot builder and real-time visitor analytics.",
+      "A chat widget for your website that sends every visitor conversation to your Telegram group. Free 3-day trial, no card needed.",
     type: "website",
   },
 };

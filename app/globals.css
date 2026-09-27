@@ -86,3 +86,45 @@ body {
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* The only moving parts on the site, used by the homepage's live-chat demo
+   (components/LiveChatDemo.tsx). Everything else animates via transition-colors
+   / transition-shadow. */
+@keyframes demo-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes demo-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+.demo-caret {
+  animation: demo-caret 1s steps(1, end) infinite;
+}
+.demo-dot {
+  animation: demo-dot 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-caret,
+  .demo-dot {
+    animation: none;
+  }
+  .demo-caret {
+    opacity: 0;
+  }
+}

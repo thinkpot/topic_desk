@@ -3,6 +3,8 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import PricingCards from "@/components/PricingCards";
+import LiveChatDemo from "@/components/LiveChatDemo";
+import { BRAND_NAME } from "@/lib/brand";
 
 // Rendered per request so the build never needs a database connection.
 export const dynamic = "force-dynamic";
@@ -16,16 +18,16 @@ const NAV_LINKS = [
 
 const STEPS = [
   {
-    title: "Connect a Telegram group",
-    body: "Point the setup wizard at a bot token and a group with Topics turned on. It checks every permission before you finish.",
+    title: "Connect your Telegram group",
+    body: "Paste a bot token from @BotFather and pick a group with Topics turned on. The setup wizard checks every permission before anything goes live.",
   },
   {
-    title: "Paste one line of code",
-    body: "Your chatbot comes with its own key baked into the snippet. Drop it on your site and the live chat widget appears.",
+    title: "Embed the chat widget on your website",
+    body: "Copy one script tag with your key already in it and paste it before </body>. The live chat widget appears on every page.",
   },
   {
-    title: "Reply from Telegram — or your dashboard",
-    body: "Each visitor becomes a chat inside your Telegram group. Answer from your phone, or turn on dashboard chat to reply without leaving the app.",
+    title: "Reply from Telegram, on any device",
+    body: "Each visitor gets their own topic in your group. Your team answers from the Telegram app on phone or desktop, and the reply shows up in the visitor's chat window.",
   },
 ];
 
@@ -42,8 +44,8 @@ const ICON_PROPS = {
 
 const PRODUCTIVITY_BENEFITS = [
   {
-    title: "Cut first-response time to seconds",
-    body: "Every message opens a chat in Telegram or lands in your dashboard the instant it's sent — no refreshing, no missed pings.",
+    title: "Answer in seconds, not hours",
+    body: "Visitor messages arrive as Telegram notifications on the phone your team already carries, so nobody has to sit watching a support inbox.",
     icon: (
       <svg {...ICON_PROPS}>
         <path d="m22 2-7 20-4-9-9-4 20-7z" />
@@ -51,8 +53,8 @@ const PRODUCTIVITY_BENEFITS = [
     ),
   },
   {
-    title: "Turn browsers into conversations",
-    body: "See who's on your website right now and reach out first, instead of waiting for them to find the chat bubble.",
+    title: "Turn visitors into conversations",
+    body: "See who's on your website right now and which page they're reading, so you can step in while they're still deciding.",
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="3" />
@@ -61,8 +63,8 @@ const PRODUCTIVITY_BENEFITS = [
     ),
   },
   {
-    title: "Let the chatbot handle the repetitive part",
-    body: "A no-code flow builder answers the first few questions and only hands off to a human once it's actually needed.",
+    title: "Let a chatbot take the first questions",
+    body: "A no-code chatbot greets visitors, collects their name or order number, and only brings in a person once it's needed.",
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="6" cy="6" r="2.2" />
@@ -76,8 +78,8 @@ const PRODUCTIVITY_BENEFITS = [
 
 const LIVE_ANALYTICS_CARDS = [
   {
-    title: "Real-time presence",
-    body: "Pushed over WebSockets the instant a visitor lands or leaves your website — no polling, no refresh button.",
+    title: "Live visitor list",
+    body: "Visitors appear the moment they land on your website and drop off when they leave. No refresh button needed.",
     icon: (
       <svg {...ICON_PROPS} width={26} height={26}>
         <circle cx="12" cy="12" r="3" />
@@ -86,8 +88,8 @@ const LIVE_ANALYTICS_CARDS = [
     ),
   },
   {
-    title: "Page & scroll tracking",
-    body: "Current page, scroll depth, referrer, and recent browsing path for every live visitor on your site right now.",
+    title: "Page, source and scroll depth",
+    body: "For each live visitor: the page they're on, where they came from, how far they've scrolled, and the pages they viewed before.",
     icon: (
       <svg {...ICON_PROPS} width={26} height={26}>
         <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -96,8 +98,8 @@ const LIVE_ANALYTICS_CARDS = [
     ),
   },
   {
-    title: "Message them first",
-    body: "On Premium, reach out to a visitor who's still just browsing — straight from the dashboard, before they've said a word.",
+    title: "Message visitors first",
+    body: "On Pro, start a chat with a visitor who's still browsing, straight from the dashboard, before they've typed anything.",
     icon: (
       <svg {...ICON_PROPS} width={26} height={26}>
         <path d="M4 4h16v12H8l-4 4V4z" />
@@ -109,7 +111,7 @@ const LIVE_ANALYTICS_CARDS = [
 const FEATURES = [
   {
     title: "No-code flow builder",
-    body: "Start, Message, Question, Buttons, Condition, Handoff, End — drag them onto a canvas and wire up a chatbot. No code, no YAML.",
+    body: "Drag Message, Question, Buttons, Condition and Hand-off blocks onto a canvas to build a chatbot. No coding needed.",
     visual: (
       <div className="flex flex-col items-center gap-1.5">
         <div className="rounded-lg border border-line-strong bg-surface px-4 py-2 text-[12px] font-medium shadow-card">
@@ -127,8 +129,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "Live visitor analytics",
-    body: "Current page, scroll depth, referrer, and recent path for every visitor browsing your website right now, gated by plan.",
+    title: "Live visitor tracking",
+    body: "See every visitor browsing your website right now: current page, referrer, scroll depth and recent path.",
     visual: (
       <div className="w-full max-w-[200px] space-y-2">
         <div className="flex items-center justify-between rounded-md border border-line bg-surface px-3 py-2 text-[11.5px] shadow-card">
@@ -150,8 +152,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "20 themes, your font",
-    body: "10 light and 10 dark themes, plus font selection — the chat widget matches your site instead of looking bolted on.",
+    title: "A chat widget that matches your site",
+    body: "Choose from 10 light and 10 dark themes and pick a font, so the chat box looks like part of your website.",
     visual: (
       <div className="space-y-3">
         <div className="flex gap-2">
@@ -168,8 +170,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "Real-time delivery",
-    body: "Built on WebSockets: replies, presence, and live analytics push instantly — no waiting on the next refresh.",
+    title: "Instant replies",
+    body: "Replies from Telegram appear in the visitor's chat window within seconds, with a sound and an unread badge if they've switched tabs.",
     visual: (
       <div className="w-full max-w-[200px] space-y-2">
         <p className="ml-auto max-w-[80%] rounded-lg rounded-br-[4px] bg-ink px-3 py-2 text-[11.5px] text-white shadow-card">
@@ -185,32 +187,48 @@ const FEATURES = [
 
 const FAQS = [
   {
-    q: "What is a Telegram chat widget?",
-    a: "It's a live chat widget you add to your website that sends every visitor message straight into a Telegram group instead of a separate inbox. Topicdesk is one of these: each visitor gets their own chat inside your group, so your team replies from Telegram itself.",
+    q: "What is a live chat widget?",
+    a: `A live chat widget is the chat box in the corner of a website that lets visitors message the business in real time. ${BRAND_NAME} is a live chat widget that delivers those messages to your Telegram group, so your team replies from Telegram instead of logging in to another support inbox.`,
   },
   {
-    q: "Do I need to set up a Telegram bot from scratch?",
-    a: "You need a bot token from @BotFather and a group with Topics turned on — that's it. The setup wizard checks every permission before your chatbot goes live.",
+    q: "How do I add Telegram chat to my website?",
+    a: "Create a bot with @BotFather, add it as an admin to a Telegram group with Topics turned on, and connect both in the setup wizard. The wizard checks the permissions, then gives you one script tag to paste before </body>. Most people are live in about five minutes.",
   },
   {
-    q: "Does this live chat widget work on my site builder?",
-    a: "Yes. It's one script tag with your API key baked in — WordPress, Shopify, Webflow, Wix, or plain HTML all work the same way, no build step required.",
+    q: "How does live chat work on a website with Telegram?",
+    a: "When a visitor sends their first message, the bot opens a new topic for them in your Telegram group and posts the message there. Anyone in the group can reply inside that topic, and the reply shows up in the visitor's chat window within seconds. Every visitor gets their own topic, so conversations never mix.",
   },
   {
-    q: "Can the chatbot answer questions before a human gets involved?",
-    a: "Yes — the no-code flow builder lets you greet visitors, ask a couple of qualifying questions, and only hand off to a human (via Telegram or your dashboard) once it's actually needed.",
+    q: "Does the chat widget work on WordPress, Shopify, Wix and Squarespace?",
+    a: "Yes. It's one script tag rather than a plugin, so it works on WordPress, Shopify, Wix, Squarespace, Webflow, Framer, Ghost and plain HTML, anywhere you can add code before </body>.",
   },
   {
-    q: "What's the difference between Telegram replies and dashboard chat?",
-    a: "By default, every conversation opens a chat in your Telegram group and your team replies there. Dashboard chat (Premium) replaces that with a live inbox right in the app, including the ability to message a visitor before they've said anything.",
+    q: "Can a chatbot answer before a person steps in?",
+    a: "Yes. The no-code chatbot builder lets you greet visitors, ask questions such as their name or order number, offer buttons, branch on the answers, and hand off to your team only when it's needed.",
+  },
+  {
+    q: "How is this different from tawk.to and other live chat tools?",
+    a: "Most live chat tools make your team answer from their own inbox app. Here, conversations go to the Telegram group your team already has open on phone and desktop. There's nothing new to install, and Telegram's notifications do the alerting.",
+  },
+  {
+    q: "Is a live chat widget safe to add to my site?",
+    a: "The widget runs inside its own isolated container, so it can't break your page styles. Each chatbot's key only works on the domains you allow, and you can generate a new key at any time. Your bot token stays on our servers and is never sent to the browser.",
+  },
+  {
+    q: "Can I reply from a dashboard instead of Telegram?",
+    a: "Yes, on the Pro plan. Dashboard chat lets you reply from the Live tab without creating Telegram topics, and you can message a visitor before they've said anything.",
   },
   {
     q: "How many live visitors can I see at once?",
-    a: "Basic shows your 10 most recent live visitors; Premium shows up to 100, plus the real total if you're over that.",
+    a: "The free trial shows 2 live visitors at a time, Basic shows 10 and Pro shows 100, plus the real total if more people are on your site.",
   },
   {
-    q: "Is there a limit on chatbots or conversations?",
-    a: "Free includes one chatbot and 500 visitor conversations a month. Basic includes five chatbots and 3,000 visitor conversations a month. Premium includes 10 chatbots and 10,000 visitor conversations a month.",
+    q: "How does the free trial work? Do I need a credit card?",
+    a: "No card and no payment details, just your name, email and a password. The 3-day trial includes one chatbot, up to 500 visitor chats, the flow builder and live visitor tracking. When it ends your chatbot pauses and your setup and chat history are kept. Pick a plan from Billing to switch it back on.",
+  },
+  {
+    q: "How much does it cost?",
+    a: "Basic is ₹499 a month for 5 chatbots and 3,000 visitor chats a month. Pro is ₹999 a month for 10 chatbots, 10,000 visitor chats and dashboard chat. Paying yearly saves 20%.",
   },
 ];
 
@@ -235,14 +253,29 @@ export default async function Home() {
     })),
   };
 
+  const appJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: BRAND_NAME,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description:
+      "A live chat widget for websites that delivers every visitor conversation to a Telegram group, with a no-code chatbot builder and live visitor tracking.",
+    offers: plans
+      .filter((p) => p.priceINR > 0)
+      .map((p) => ({ "@type": "Offer", name: p.name, price: p.priceINR, priceCurrency: "INR" })),
+  };
+
   return (
     <div className="min-h-screen bg-surface">
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      {/* eslint-disable-next-line react/no-danger */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <span className="text-[17px] font-semibold tracking-[-0.02em]">Topicdesk</span>
+          <span className="text-[17px] font-semibold tracking-[-0.02em]">{BRAND_NAME}</span>
           <nav className="hidden items-center gap-6 md:flex">
             {NAV_LINKS.map((link) => (
               <a key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
@@ -255,7 +288,7 @@ export default async function Home() {
               Log in
             </Link>
             <Link href="/register" className="btn-primary btn-sm">
-              Get started free
+              Start free trial
             </Link>
           </div>
         </div>
@@ -265,30 +298,28 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 sm:pt-24">
         <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <p className="label-eyebrow">Live chat widget · Telegram integration</p>
+            <p className="label-eyebrow">Telegram live chat widget</p>
             <h1 className="mt-4 text-display sm:text-display-lg">
-              A live chat widget for your website,
-              <br />
-              powered by Telegram.
+              Add Telegram live chat to your website.
             </h1>
             <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-2">
-              Every visitor who messages you opens their own chat inside your Telegram group. Your support team
-              replies from an app they already use — no new inbox, no new app to check.
+              A chat widget for your website that sends every visitor&apos;s message to your Telegram group, each in its
+              own topic. Your team replies from Telegram on their phone, and the answer appears on your site.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/register" className="btn-primary px-6 py-3">
-                Create an account
+                Start your free trial
               </Link>
               <a href="#how" className="btn-secondary px-6 py-3">
                 See how it works
               </a>
             </div>
-            <p className="mt-4 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
+            <p className="mt-4 text-[13px] text-ink-3">Free for 3 days. No credit card, no payment details.</p>
           </div>
 
           <Image
             src="/chatbox.png"
-            alt="Live chat widget conversation preview, relayed to a Telegram group"
+            alt="A website chat widget conversation, with the visitor's messages delivered to a Telegram group topic"
             width={1448}
             height={1086}
             priority
@@ -298,19 +329,39 @@ export default async function Home() {
       </section>
 
 
+      {/* Flagship feature: catching a visitor the moment they arrive. */}
+      <section id="live" className="border-y border-line bg-plane">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="label-eyebrow">Live chat, the moment they arrive</p>
+            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em] sm:text-[32px]">
+              Chat with website visitors the second they land
+            </h2>
+            <p className="mt-3.5 text-[15.5px] leading-relaxed text-ink-2">
+              You don&apos;t have to wait for someone to find the chat bubble. Every visitor shows up in your dashboard
+              as they arrive — so you can say hello while they&apos;re still on the page.
+            </p>
+          </div>
+
+          <div className="mt-12">
+            <LiveChatDemo />
+          </div>
+        </div>
+      </section>
+
       {/* Live analytics showcase */}
       <section className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div>
-              <p className="label-eyebrow">Live visitor tracking</p>
+              <p className="label-eyebrow">The live dashboard</p>
               <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-                See who&apos;s on your website in real time
+                Every live visitor, with the context to help them
               </h2>
             </div>
             <p className="text-[15px] leading-relaxed text-ink-2">
-              Everyone currently browsing a site with your widget installed, updated in real time over WebSockets —
-              current page, scroll depth, and recent path, whether or not they&apos;ve said a word.
+              The Live tab as it actually looks: everyone browsing right now, the pages they moved through, and the
+              full conversation alongside — so you open with something useful.
             </p>
           </div>
 
@@ -324,8 +375,8 @@ export default async function Home() {
             <Image
               src="/live_analytics.png"
               alt="The Live tab: a visitor's current page, scroll depth, recent path, and conversation transcript"
-              width={3468}
-              height={2056}
+              width={3500}
+              height={2058}
               className="w-full"
             />
           </div>
@@ -348,11 +399,11 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-6 py-20 text-center">
         <p className="label-eyebrow">No-code chatbot builder</p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-          Build a no-code chatbot flow for your website
+          Build a website chatbot without writing code
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
-          Greet a visitor, ask a qualifying question, branch on the answer, hand off to a human — wire it all up on a
-          canvas, no developer required.
+          Greet visitors, ask for their name or order number, offer buttons and branch on the answers. When a person is
+          needed, the chat moves to your Telegram group with everything the bot collected.
         </p>
 
         <div className="surface mx-auto mt-10 max-w-5xl overflow-hidden shadow-card">
@@ -364,7 +415,7 @@ export default async function Home() {
           </div>
           <Image
             src="/flowbuilder.png"
-            alt="The no-code flow builder canvas: Start, Message, Question, Question, Hand off to Telegram"
+            alt="The no-code flow builder canvas: Start, Message, Question, Buttons with three choices, Question, Hand off to Telegram"
             width={3500}
             height={2058}
             className="w-full"
@@ -373,9 +424,9 @@ export default async function Home() {
 
         <div className="mt-8">
           <Link href="/register" className="btn-primary px-6 py-3">
-            Create an account
+            Start your free trial
           </Link>
-          <p className="mt-3 text-[13px] text-ink-3">Setup takes about five minutes. No credit card required.</p>
+          <p className="mt-3 text-[13px] text-ink-3">Free for 3 days. No credit card, no payment details.</p>
         </div>
       </section>
 
@@ -383,9 +434,9 @@ export default async function Home() {
       <section className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="label-eyebrow">Why teams switch</p>
+            <p className="label-eyebrow">Live chat for small business</p>
             <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-              Everything you need to run support from Telegram
+              Run customer support from Telegram
             </h2>
           </div>
           <div className="mt-14 grid gap-10 sm:grid-cols-3">
@@ -406,7 +457,7 @@ export default async function Home() {
       <section id="how" className="mx-auto max-w-6xl px-6 py-20">
         <p className="label-eyebrow">Setup</p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-          Three steps to add live chat to your website
+          How to add live chat to your website in three steps
         </h2>
         <div className="mt-10 grid gap-8 sm:grid-cols-3">
           {STEPS.map((step, i) => (
@@ -425,8 +476,12 @@ export default async function Home() {
       <section id="features" className="border-y border-line bg-plane">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <div className="text-center">
-            <p className="label-eyebrow">Everything included</p>
+            <p className="label-eyebrow">Features</p>
             <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">More than a chat bubble</h2>
+            <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
+              Every plan, including the free trial, comes with the chatbot builder, live visitor tracking and all 20
+              widget themes.
+            </p>
           </div>
           <div className="mx-auto mt-14 grid max-w-3xl gap-x-10 gap-y-14 sm:grid-cols-2">
             {FEATURES.map((f) => (
@@ -446,10 +501,10 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-6 py-20 text-center">
         <p className="label-eyebrow">Compatibility</p>
         <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">
-          Works with the platforms you already use
+          Live chat for WordPress, Shopify, Wix and more
         </h2>
         <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-ink-2">
-          One script tag, no plugin, no build step. If your site can run HTML before{" "}
+          One script tag, no plugin to install and no build step. If your site lets you add HTML before{" "}
           <code className="rounded bg-surface-sunken px-1.5 py-0.5 text-[13px]">&lt;/body&gt;</code>, it works.
         </p>
 
@@ -504,8 +559,10 @@ export default async function Home() {
       {/* Pricing */}
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <p className="label-eyebrow">Pricing</p>
-        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Simple, per account</h2>
-        <p className="mt-2 text-[15px] text-ink-2">Cancel whenever you like.</p>
+        <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.025em]">Simple pricing, in rupees</h2>
+        <p className="mt-2 text-[15px] text-ink-2">
+          Start with a 3-day free trial, with no card needed. Pay monthly or yearly, and cancel whenever you like.
+        </p>
 
         {plans.length > 0 ? (
           <PricingCards plans={plans} />
@@ -518,10 +575,9 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-6 py-10">
           <div className="flex flex-wrap items-start justify-between gap-8">
             <div>
-              <span className="text-[15px] font-semibold tracking-[-0.02em]">Topicdesk</span>
+              <span className="text-[15px] font-semibold tracking-[-0.02em]">{BRAND_NAME}</span>
               <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-ink-3">
-                A Telegram-powered live chat widget for websites, with a no-code chatbot builder and real-time
-                visitor analytics.
+                A Telegram live chat widget for websites, with a no-code chatbot builder and live visitor tracking.
               </p>
             </div>
             <div className="flex gap-12">
@@ -552,7 +608,7 @@ export default async function Home() {
               </div>
             </div>
           </div>
-          <p className="mt-10 text-[12.5px] text-ink-3">© {new Date().getFullYear()} Topicdesk. All rights reserved.</p>
+          <p className="mt-10 text-[12.5px] text-ink-3">© {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>
         </div>
       </footer>
 
