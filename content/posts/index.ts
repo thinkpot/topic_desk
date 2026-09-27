@@ -10,6 +10,7 @@ import * as telegramBot from "./telegram-bot-for-business";
 import * as liveChatVsChatbot from "./live-chat-vs-chatbot";
 import * as widgetSafe from "./is-a-live-chat-widget-safe";
 import * as trackingLegal from "./is-website-visitor-tracking-legal";
+import * as bestLiveChat from "./best-live-chat-software";
 
 // Each post module exports `meta` plus a default component for its body. Adding
 // a post means creating the file and adding it to this list — deliberately
@@ -25,6 +26,7 @@ const MODULES = [
   liveChatVsChatbot,
   widgetSafe,
   trackingLegal,
+  bestLiveChat,
 ];
 
 export const POSTS: Post[] = MODULES.map((module) => ({ ...module.meta, Body: module.default }));

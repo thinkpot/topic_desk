@@ -122,22 +122,20 @@ export default function Body() {
         by it — the people who take it were never going to be served by the bot.
       </p>
 
-      <h2>Rule-based flows versus AI chatbots</h2>
-      <p>Two genuinely different things are sold as &ldquo;chatbot&rdquo;, and they fail in opposite ways.</p>
+      <h2>What a scripted flow will and will not do</h2>
       <p>
-        A <strong>rule-based flow bot</strong> follows the path you drew. You control every word, so it cannot
-        invent a refund policy or promise a delivery date you do not offer. It is predictable, and it is dumb:
-        anything outside the flow gets a fallback, and coverage means more branches built by hand.
+        A flow follows the path you drew. You control every word, which means it cannot invent a refund policy
+        or promise a delivery date you do not offer. For a small business that is usually the point: the bot is
+        predictable, and the answers are yours.
       </p>
       <p>
-        An <strong>AI or LLM chatbot</strong> generates answers from your content. It handles phrasing you never
-        anticipated, which is the appeal, and it can be confidently wrong. Using one responsibly means a bounded
-        source of truth, testing against real questions, and reading transcripts.
+        The trade-off is that it only covers what you built. Anything outside the flow hits your fallback, and
+        widening coverage means adding branches by hand. That is fine when a handful of questions make up most
+        of your volume, and frustrating when every visitor asks something different.
       </p>
       <p>
-        Neither wins in general. If your answers are fixed and a wrong one is expensive, a flow is safer; with a
-        large documentation set, generation earns its keep. See{" "}
-        <Link href="/blog/live-chat-vs-chatbot">live chat vs chatbot</Link> for that comparison.
+        So build for the questions you can predict, keep the fallback short and route it to a person quickly.
+        See <Link href="/blog/live-chat-vs-chatbot">live chat vs chatbot</Link> for where each approach fits.
       </p>
 
       <h2>Test it as a stranger, on a phone</h2>
@@ -168,8 +166,7 @@ export default function Body() {
       <h2>How Chatshore does it</h2>
       <p>
         Chatshore&apos;s flow builder is a drag-and-drop canvas with exactly the blocks above — Message,
-        Question, Buttons, Condition, Hand off and End. It is rule-based, not AI, so the bot says what you wrote
-        and nothing else.
+        Question, Buttons, Condition, Hand off and End. The bot says what you wrote and nothing else.
       </p>
       <p>
         A hand off opens the conversation as its own topic in your Telegram group, so everything the bot cannot
