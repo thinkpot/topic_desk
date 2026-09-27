@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
+  { href: "/blog", label: "Blog" },
 ];
 
 const STEPS = [
@@ -278,11 +279,19 @@ export default async function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <LogoLockup />
           <nav className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
-                {link.label}
-              </a>
-            ))}
+            {NAV_LINKS.map((link) =>
+              // In-page anchors stay plain <a>; real routes use Link so they
+              // navigate client-side instead of reloading the whole page.
+              link.href.startsWith("#") ? (
+                <a key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
+                  {link.label}
+                </Link>
+              )
+            )}
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/login" className="btn-ghost btn-sm">
@@ -597,6 +606,9 @@ export default async function Home() {
                   <a href="#pricing" className="hover:text-ink">
                     Pricing
                   </a>
+                  <Link href="/blog" className="hover:text-ink">
+                    Blog
+                  </Link>
                 </div>
               </div>
               <div>
