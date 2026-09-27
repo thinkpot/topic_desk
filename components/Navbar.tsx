@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { trialStatus } from "@/lib/plans";
+import Logo from "@/components/Logo";
 import { BRAND_NAME } from "@/lib/brand";
 
 export default function Navbar() {
@@ -31,7 +32,11 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href={isAdminArea ? "/admin" : "/dashboard"} className="text-[16px] font-semibold tracking-[-0.02em]">
+            <Link
+              href={isAdminArea ? "/admin" : "/dashboard"}
+              className="inline-flex items-center gap-2 text-[16px] font-semibold tracking-[-0.02em]"
+            >
+              <Logo size={24} />
               {BRAND_NAME}
             </Link>
             {isAdminArea && (

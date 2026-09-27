@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import PricingCards from "@/components/PricingCards";
 import LiveChatDemo from "@/components/LiveChatDemo";
+import Logo, { LogoLockup } from "@/components/Logo";
 import { BRAND_NAME } from "@/lib/brand";
 
 // Rendered per request so the build never needs a database connection.
@@ -275,7 +276,7 @@ export default async function Home() {
 
       <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <span className="text-[17px] font-semibold tracking-[-0.02em]">{BRAND_NAME}</span>
+          <LogoLockup />
           <nav className="hidden items-center gap-6 md:flex">
             {NAV_LINKS.map((link) => (
               <a key={link.href} href={link.href} className="text-[13.5px] font-medium text-ink-2 hover:text-ink">
@@ -575,7 +576,10 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-6 py-10">
           <div className="flex flex-wrap items-start justify-between gap-8">
             <div>
-              <span className="text-[15px] font-semibold tracking-[-0.02em]">{BRAND_NAME}</span>
+              <span className="inline-flex items-center gap-2">
+                <Logo size={22} />
+                <span className="text-[15px] font-semibold tracking-[-0.02em]">{BRAND_NAME}</span>
+              </span>
               <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-ink-3">
                 A Telegram live chat widget for websites, with a no-code chatbot builder and live visitor tracking.
               </p>

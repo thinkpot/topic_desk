@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { BRAND_NAME } from "@/lib/brand";
 import { LEGAL, legalDetailsMissing } from "@/lib/legal";
+import { LogoLockup } from "@/components/Logo";
 
 const LEGAL_LINKS = [
   { href: "/terms", label: "Terms of Service" },
@@ -27,8 +27,8 @@ export default function LegalPage({
     <div className="min-h-screen bg-surface">
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3.5">
-          <Link href="/" className="text-[17px] font-semibold tracking-[-0.02em]">
-            {BRAND_NAME}
+          <Link href="/">
+            <LogoLockup />
           </Link>
           <Link href="/" className="btn-ghost btn-sm">
             Back to site
