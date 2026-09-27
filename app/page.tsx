@@ -606,6 +606,20 @@ export default async function Home() {
                   </Link>
                 </div>
               </div>
+              <div>
+                <p className="label-eyebrow">Legal</p>
+                <div className="mt-3 flex flex-col gap-2 text-[13.5px] text-ink-2">
+                  <Link href="/terms" className="hover:text-ink">
+                    Terms
+                  </Link>
+                  <Link href="/privacy" className="hover:text-ink">
+                    Privacy
+                  </Link>
+                  <Link href="/refunds" className="hover:text-ink">
+                    Refunds
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
           <p className="mt-10 text-[12.5px] text-ink-3">© {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>
