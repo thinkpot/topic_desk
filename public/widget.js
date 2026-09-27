@@ -2,7 +2,7 @@
   var currentScript = document.currentScript;
   var apiKey = currentScript.getAttribute("data-api-key");
   if (!apiKey) {
-    console.error("[topicdesk] Missing data-api-key attribute on the script tag");
+    console.error("[chatshore] Missing data-api-key attribute on the script tag");
     return;
   }
 

@@ -1,12 +1,12 @@
-# Topicdesk — Telegram-powered chat widget SaaS
+# Chatshore — Telegram-powered chat widget SaaS
 
 A live chat widget that website owners embed with one script tag. Every visitor conversation is
 relayed into a Telegram group as its own **topic**, so replies from the group land back in the
 visitor's chat window.
 
 **Single Next.js app** — the marketing page, customer dashboard, admin panel and API (Route
-Handlers) are one deployable unit, so it ships as a single Vercel project or runs as a single Node
-server anywhere else (`next start`).
+Handlers) are one deployable unit, run by a single always-on Node server (`server.ts`, which also
+hosts Socket.io).
 
 ## Structure
 
@@ -58,13 +58,13 @@ publishable keys or an Intercom app ID. The actual access controls are:
 
 Only accounts on a paid, unexpired plan can create chatbots or hold working keys.
 
-### Realtime: polling, not websockets
+### Realtime: Socket.io, with HTTP polling as a fallback
 
-The widget polls `GET /api/widget/:apiKey/messages?visitorId=…&after=…` every ~3 seconds while
-open. This is deliberate: Vercel runs each request as a short-lived, possibly-different function
-instance, so a persistent Socket.io connection wouldn't reliably survive or broadcast across
-instances. Polling behaves identically on Vercel and on a self-hosted Node server. The tradeoff is
-a few seconds of latency before a reply appears.
+`server.ts` is a custom Node server that runs Next.js and a Socket.io server in one process. The
+widget uses the socket for presence heartbeats and instant replies, and falls back to polling
+`GET /api/widget/:apiKey/messages` every ~3 seconds if the socket can't connect (blocked CDN,
+strict CSP). **This needs an always-on Node server — serverless platforms such as Vercel can't hold
+the socket connections open.**
 
 ### Metrics
 
@@ -78,11 +78,20 @@ reply rate, and average first-reply time. Day bucketing uses UTC.
 Plans live in the **database**, not in code — admins change pricing and limits from
 `/admin/plans` and they take effect immediately for every account on that plan.
 
-| Plan  | Price     | Chatbots  | Visitors/month | Notes                          |
-|-------|-----------|-----------|----------------|--------------------------------|
-| Free  | ₹0        | 0         | 0              | Default for self-signup        |
-| Basic | ₹1000/mo  | 1         | 3,000          |                                |
-| Pro   | ₹3000/mo  | Unlimited | Unlimited      |                                |
+| Plan  | Monthly | Yearly (≈/mo) | Chatbots | Visitors/month | Live visitors | Dashboard chat |
+|-------|---------|---------------|----------|----------------|---------------|----------------|
+| Free  | ₹0 — a 3-day trial, no card | — | 1 | 500 | 2 | No |
+| Basic | ₹499    | ₹399          | 5        | 3,000          | 10            | No             |
+| Pro   | ₹999    | ₹799          | 10       | 10,000         | 100           | Yes            |
+
+### Free trial and upgrades (no payment gateway)
+
+Every signup gets a 3-day trial on the Free plan, with no payment details collected
+(`TRIAL_DAYS` in `lib/plans.ts`). The dashboard shows an onboarding checklist, which is worked out
+from real data (bot connected → widget seen → first chat → first reply), and a trial countdown.
+When the trial ends, the account is locked everywhere except Billing. There the customer
+**requests** a plan. The request shows up under **Plan requests** in `/admin`, and approving it
+moves the account onto that plan for one billing period. Invoicing happens outside the app.
 
 "Unlimited" is stored as `2147483647` (Postgres `int4` max) so limit checks stay plain numeric
 comparisons — see `lib/plans.ts`.
@@ -97,7 +106,8 @@ At `/admin`, for users with `role = ADMIN`:
 - **Plans** — create and edit plans (price, limits, paid/unpaid tier, public visibility). A plan
   with accounts on it can't be deleted.
 
-Since online payments aren't wired up, the admin panel is how customers get onto paid plans.
+- **Plan requests** (on the overview) — approve or decline customers' plan requests. Since online
+  payments aren't wired up, approving a request is how customers get onto paid plans.
 
 ## Prerequisites for each customer's Telegram group
 
@@ -147,29 +157,24 @@ Its data and URL persist across restarts.
 Managing the local database server: `npm run db:start` / `npm run db:stop`, `npx prisma dev ls`
 (status and URL), `npx prisma dev rm --name topicdesk` (delete it and its data).
 
+The local instance is still called `topicdesk` (the name predates the rename to Chatshore). It's
+just a local handle — renaming it would point `npm run dev` at a new, empty database and strand
+the existing local data, so it's left alone deliberately.
+
 Prisma config lives in [`prisma.config.ts`](prisma.config.ts). Because that file exists, the
 Prisma CLI no longer auto-loads `.env`, so the config imports `dotenv/config` itself — Next.js
 still loads `.env` on its own at runtime.
 
-**Important:** Telegram only delivers webhooks to an **HTTPS** URL. For local development, tunnel
-the app (e.g. `ngrok http 3000`) and set `APP_URL` to the tunnel's HTTPS URL *before* creating a
-chatbot, otherwise `setWebhook` will fail.
+**Important:** Telegram only delivers webhooks to an **HTTPS** URL. For local development, set
+`DEV_TUNNEL="cloudflared"` (requires `brew install cloudflared`). The server then:
 
-## Deploying to Vercel (single project)
+- runs a Cloudflare quick tunnel itself,
+- waits for the new hostname to appear in public DNS,
+- sets `APP_URL` to the tunnel URL,
+- re-registers every chatbot's webhook.
 
-1. Push this repo and import it into Vercel.
-2. Create a Prisma Postgres database at [console.prisma.io](https://console.prisma.io) and copy
-   its connection string. It's built for serverless: connection pooling is handled for you, which
-   matters here because each API route runs as an independent invocation.
-3. Set environment variables: `DATABASE_URL` (that connection string), `JWT_SECRET`,
-   `JWT_EXPIRES_IN` (optional), and `APP_URL` = your production URL
-   (e.g. `https://your-app.vercel.app`).
-4. Before the first deploy, apply the schema and seed:
-   `DATABASE_URL=… npx prisma migrate deploy` then
-   `DATABASE_URL=… ADMIN_EMAIL=… ADMIN_PASSWORD=… npx prisma db seed`
-   (Vercel's build step only runs `prisma generate`.)
-5. Deploy. The widget is served at `https://your-domain/widget.js`, which is what the dashboard's
-   embed snippet points to.
+If the tunnel dies or stops responding, it is restarted and the webhooks are re-synced
+automatically. On startup the server also re-syncs webhooks against a fixed `APP_URL`.
 
 ## Deploying as a single traditional server
 
@@ -180,14 +185,28 @@ npm run start   # serves dashboard, admin, API and widget on one port
 
 Put it behind a reverse proxy for HTTPS and point `APP_URL` at that public URL.
 
-## What's stubbed / needs production hardening
+## Security notes
 
-- **Payments**: the billing page lists plans but has no gateway. Wire up Razorpay or Stripe:
-  create an order, verify the payment webhook server-side, then update `User.planId` /
-  `planExpiresAt`. Until then, admins move accounts between plans.
-- **Auth**: JWT in `localStorage`. For production, consider httpOnly cookies + refresh tokens.
-- **Rate limiting**: none on the public widget endpoints (`messages`, `track`) — add per-IP or
-  per-visitor limits before launch, since `track` increments counters on unauthenticated calls.
+- **JWT_SECRET**: production refuses to start with a placeholder or anything under 32 characters.
+- **Tokens**: HS256 only. Each token carries `User.tokenVersion`, so a password reset, suspension or
+  deletion revokes every earlier token, and also disconnects the user's open dashboard sockets.
+  The Socket.io handshake runs the same checks as REST, including suspension and trial lock.
+- **Rate limiting**: in-memory fixed windows (`lib/rate-limit-core.ts`) cover:
+  - login, per IP and per account
+  - register
+  - the Telegram verify step
+  - plan requests
+  - every public widget endpoint
+  - socket heartbeats
+
+  `server.ts` resolves the client IP itself and trusts proxy headers only from a loopback proxy.
+  If you run more than one instance, move the counters to Redis.
+- **Login**: unknown emails still run a bcrypt compare (cost 12), so response timing doesn't
+  reveal which accounts exist. Emails are trimmed and lowercased everywhere.
+
+## Still to do
+
+- **Payments**: approving plan requests is manual. Wiring a gateway later means creating the
+  order, verifying the payment webhook, and then running the same update the approve route does.
 - **Password reset / email verification**: not implemented; admins set passwords directly.
-- **Multiple agents per topic**: any group member who replies in a visitor's topic is relayed
-  back to that visitor.
+- **Auth storage**: JWT in `localStorage`. Consider httpOnly cookies before a wider launch.
