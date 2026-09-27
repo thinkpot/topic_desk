@@ -4,14 +4,24 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiErrorMessage } from "@/lib/api";
+import { TRIAL_DAYS } from "@/lib/plans";
 import AuthShell from "@/components/AuthShell";
 import { Alert, Field } from "@/components/ui/primitives";
+
+const TRIAL_POINTS = [
+  "No credit card or payment details",
+  "One chatbot, up to 500 visitor chats",
+  "Flow builder, themes and live analytics included",
+  "Nothing is charged when the trial ends",
+];
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +30,7 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register({ name, email, password, companyName, websiteUrl });
     } catch (err) {
       setError(apiErrorMessage(err));
       setLoading(false);
@@ -29,8 +39,8 @@ export default function RegisterPage() {
 
   return (
     <AuthShell
-      title="Create your account"
-      subtitle="Set up your first chatbot in a few minutes."
+      title={`Start your ${TRIAL_DAYS}-day free trial`}
+      subtitle="No card needed. Get your chat live in about five minutes."
       footer={
         <>
           Already have an account?{" "}
@@ -40,6 +50,17 @@ export default function RegisterPage() {
         </>
       }
     >
+      <ul className="mb-7 space-y-2 rounded-lg border border-line bg-surface-sunken px-4 py-3.5 text-[13.5px] text-ink-2">
+        {TRIAL_POINTS.map((point) => (
+          <li key={point} className="flex gap-2.5">
+            <span aria-hidden className="text-ink">
+              ✓
+            </span>
+            {point}
+          </li>
+        ))}
+      </ul>
+
       <form onSubmit={onSubmit} className="space-y-4">
         {error && <Alert>{error}</Alert>}
         <Field label="Full name">
@@ -75,9 +96,32 @@ export default function RegisterPage() {
             placeholder="••••••••"
           />
         </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Company" hint="Optional">
+            <input
+              autoComplete="organization"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="input"
+              placeholder="Acme Studio"
+            />
+          </Field>
+          <Field label="Website" hint="Optional">
+            <input
+              autoComplete="url"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              className="input"
+              placeholder="acme.com"
+            />
+          </Field>
+        </div>
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? "Creating account…" : "Create account"}
+          {loading ? "Starting your trial…" : "Start free trial"}
         </button>
+        <p className="text-center text-[12.5px] text-ink-3">
+          Your trial runs {TRIAL_DAYS} days. We&apos;ll never ask for payment details to start it.
+        </p>
       </form>
     </AuthShell>
   );

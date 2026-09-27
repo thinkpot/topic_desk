@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatLimit, formatPriceINR, yearlyDiscountPercent, yearlyMonthlyEquivalent } from "@/lib/plans";
+import { TRIAL_DAYS, formatLimit, formatPriceINR, yearlyDiscountPercent, yearlyMonthlyEquivalent } from "@/lib/plans";
 import { Badge } from "@/components/ui/primitives";
 
 export interface PricingPlan {
@@ -68,7 +68,11 @@ export default function PricingCards({ plans }: { plans: PricingPlan[] }) {
                 {showYearly && discount > 0 && <Badge tone="positive">{discount}% off</Badge>}
               </div>
               <p className="mt-1 text-[13px] text-ink-3">
-                {showYearly ? `Billed ${formatPriceINR(plan.priceYearlyINR)} yearly` : "Billed monthly"}
+                {plan.priceINR === 0
+                  ? `${TRIAL_DAYS}-day trial · no card required`
+                  : showYearly
+                    ? `Billed ${formatPriceINR(plan.priceYearlyINR)} yearly`
+                    : "Billed monthly"}
               </p>
 
               {plan.description && <p className="mt-2 text-[14px] text-ink-2">{plan.description}</p>}
@@ -90,8 +94,9 @@ export default function PricingCards({ plans }: { plans: PricingPlan[] }) {
                   <span className="font-medium">{plan.supportsDashboardChat ? "Included" : "—"}</span>
                 </li>
               </ul>
+              {/* Every account starts on the no-card trial, whichever plan they're eyeing. */}
               <Link href="/register" className="btn-primary mt-7 w-full">
-                Get started
+                {plan.priceINR === 0 ? "Start free trial" : `Try free for ${TRIAL_DAYS} days`}
               </Link>
             </div>
           );

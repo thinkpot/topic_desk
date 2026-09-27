@@ -24,7 +24,18 @@ export interface Me {
   role: "USER" | "ADMIN";
   isSuspended: boolean;
   planExpiresAt: string | null;
+  trialStartedAt: string | null;
+  companyName: string | null;
+  websiteUrl: string | null;
   plan: UserPlan;
+}
+
+export interface RegisterInput {
+  name: string;
+  email: string;
+  password: string;
+  companyName?: string;
+  websiteUrl?: string;
 }
 
 export interface Usage {
@@ -32,13 +43,22 @@ export interface Usage {
   monthlyConversations: number;
 }
 
+export interface PendingUpgrade {
+  id: string;
+  planId: string;
+  planName: string;
+  billingCycle: "MONTHLY" | "YEARLY";
+  createdAt: string;
+}
+
 interface AuthContextValue {
   user: Me | null;
   usage: Usage | null;
   blockReason: string | null;
+  pendingUpgrade: PendingUpgrade | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -49,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [blockReason, setBlockReason] = useState<string | null>(null);
+  const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -64,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(res.data.user);
       setUsage(res.data.usage);
       setBlockReason(res.data.blockReason);
+      setPendingUpgrade(res.data.pendingUpgrade);
     } catch {
       setUser(null);
     } finally {
@@ -83,12 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push(res.data.user.role === "ADMIN" ? "/admin" : "/dashboard");
   }
 
-  async function register(name: string, email: string, password: string) {
-    const res = await api.post("/auth/register", { name, email, password });
+  async function register(input: RegisterInput) {
+    const res = await api.post("/auth/register", input);
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
     await refresh();
-    router.push("/dashboard");
+    // ?welcome=1 opens the dashboard on the onboarding checklist's intro.
+    router.push("/dashboard?welcome=1");
   }
 
   function logout() {
@@ -99,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, usage, blockReason, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, usage, blockReason, pendingUpgrade, loading, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

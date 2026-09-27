@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api, apiErrorMessage } from "@/lib/api";
 import { formatPriceINR } from "@/lib/plans";
 import { Alert, Badge, Spinner, StatTile } from "@/components/ui/primitives";
+import UpgradeRequestsPanel from "@/components/UpgradeRequestsPanel";
 
 interface Overview {
   totals: {
@@ -47,7 +48,8 @@ export default function AdminOverviewPage() {
   if (!data) return <Spinner />;
 
   const totalOnPaidPlans = data.planBreakdown
-    .filter((p) => p.isPaid)
+    // The free plan is the trial, so it doesn't count as paying.
+    .filter((p) => p.isPaid && p.priceINR > 0)
     .reduce((sum, p) => sum + p._count.users, 0);
 
   return (
@@ -75,6 +77,8 @@ export default function AdminOverviewPage() {
           sublabel="Sum of active paid plans"
         />
       </div>
+
+      <UpgradeRequestsPanel />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="surface p-5">

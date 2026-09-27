@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { trialStatus } from "@/lib/plans";
+import { BRAND_NAME } from "@/lib/brand";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -30,7 +32,7 @@ export default function Navbar() {
         <div className="flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href={isAdminArea ? "/admin" : "/dashboard"} className="text-[16px] font-semibold tracking-[-0.02em]">
-              Topicdesk
+              {BRAND_NAME}
             </Link>
             {isAdminArea && (
               <span className="rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">Admin</span>
@@ -48,7 +50,7 @@ export default function Navbar() {
             )}
             {!isAdminArea && user && (
               <span className="hidden text-[13px] text-ink-2 sm:block">
-                {user.plan.name}
+                {trialStatus(user).onTrial ? "Free trial" : user.plan.name}
                 {!user.plan.isPaid && " · no chatbots"}
               </span>
             )}

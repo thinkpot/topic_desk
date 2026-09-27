@@ -8,7 +8,11 @@ import { formatLimit, isUnlimited } from "@/lib/plans";
 import type { Analytics } from "@/lib/analytics";
 import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
-import { Alert, EmptyState, Spinner, StatTile } from "@/components/ui/primitives";
+import { Alert, Spinner, StatTile } from "@/components/ui/primitives";
+import OnboardingChecklist, { onboardingComplete } from "@/components/OnboardingChecklist";
+import type { OnboardingProgress } from "@/lib/onboarding";
+
+const CHECKLIST_HIDDEN_KEY = "onboardingChecklistHidden";
 
 const RANGES = [7, 14, 30, 90];
 
@@ -27,6 +31,40 @@ export default function DashboardOverviewPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [chatbotCount, setChatbotCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [onboarding, setOnboarding] = useState<OnboardingProgress | null>(null);
+  const [welcome, setWelcome] = useState(false);
+  const [checklistHidden, setChecklistHidden] = useState(false);
+
+  useEffect(() => {
+    // Read from window rather than useSearchParams so the page doesn't need a
+    // Suspense boundary; strip the param so a reload doesn't re-welcome.
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("welcome") === "1") {
+      setWelcome(true);
+      url.searchParams.delete("welcome");
+      window.history.replaceState(null, "", url.pathname + url.search);
+    }
+    try {
+      setChecklistHidden(localStorage.getItem(CHECKLIST_HIDDEN_KEY) === "1");
+    } catch {
+      // Storage blocked: the checklist just stays visible.
+    }
+    api
+      .get("/onboarding")
+      .then((res) => setOnboarding(res.data.progress))
+      .catch(() => setOnboarding(null));
+  }, []);
+
+  function hideChecklist() {
+    setChecklistHidden(true);
+    try {
+      localStorage.setItem(CHECKLIST_HIDDEN_KEY, "1");
+    } catch {
+      // Hidden for this visit only.
+    }
+  }
+
+  const firstName = user?.name.split(" ")[0] ?? "there";
 
   useEffect(() => {
     setAnalytics(null);
@@ -44,20 +82,19 @@ export default function DashboardOverviewPage() {
   }, []);
 
   if (chatbotCount === 0) {
+    // Nothing to chart yet — the checklist is the whole page until a bot exists.
     return (
-      <div className="mx-auto max-w-2xl pt-6">
-        <EmptyState
-          title="Let's get your chat live"
-          description="Connect a Telegram group, paste one line of code on your site, and start answering visitors from your phone."
-          action={
-            <Link href="/dashboard/chatbots/new" className="btn-primary px-5">
-              Set up your first chatbot
-            </Link>
-          }
-        />
+      <div className="mx-auto max-w-2xl pt-2">
+        {onboarding ? (
+          <OnboardingChecklist progress={onboarding} firstName={firstName} welcome={welcome} />
+        ) : (
+          <Spinner />
+        )}
       </div>
     );
   }
+
+  const showChecklist = onboarding && !onboardingComplete(onboarding) && (!checklistHidden || welcome);
 
   const monthlyLimit = user?.plan.maxMonthlyUsers ?? 0;
   const monthlyUsed = usage?.monthlyConversations ?? 0;
@@ -84,6 +121,10 @@ export default function DashboardOverviewPage() {
           ))}
         </div>
       </div>
+
+      {showChecklist && (
+        <OnboardingChecklist progress={onboarding} firstName={firstName} welcome={welcome} onDismiss={hideChecklist} />
+      )}
 
       {error && <Alert>{error}</Alert>}
       {!analytics && !error && <Spinner label="Loading metrics…" />}

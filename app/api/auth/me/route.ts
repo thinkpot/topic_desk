@@ -12,10 +12,14 @@ export async function GET(req: NextRequest) {
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
 
-  const [chatbotCount, monthlyConversations] = await Promise.all([
+  const [chatbotCount, monthlyConversations, pending] = await Promise.all([
     prisma.chatbot.count({ where: { userId: user.id } }),
     prisma.conversation.count({
       where: { chatbot: { userId: user.id }, createdAt: { gte: monthStart } },
+    }),
+    prisma.upgradeRequest.findFirst({
+      where: { userId: user.id, status: "PENDING" },
+      select: { id: true, billingCycle: true, createdAt: true, plan: { select: { id: true, name: true } } },
     }),
   ]);
 
@@ -23,5 +27,8 @@ export async function GET(req: NextRequest) {
     user: publicUser(user),
     usage: { chatbots: chatbotCount, monthlyConversations },
     blockReason: accountBlockReason(user),
+    pendingUpgrade: pending
+      ? { id: pending.id, planId: pending.plan.id, planName: pending.plan.name, billingCycle: pending.billingCycle, createdAt: pending.createdAt }
+      : null,
   });
 }

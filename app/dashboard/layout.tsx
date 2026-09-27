@@ -5,10 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
 import TrialLockOverlay from "@/components/TrialLockOverlay";
+import TrialBanner from "@/components/TrialBanner";
+import { trialStatus } from "@/lib/plans";
 import { Spinner } from "@/components/ui/primitives";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, blockReason } = useAuth();
+  const { user, loading, blockReason, pendingUpgrade } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   // The flow canvas needs the full viewport, not the standard content column.
@@ -38,7 +40,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="mx-auto max-w-6xl px-6 py-2.5 text-[13px] text-[#7a5800]">{blockReason}</div>
         </div>
       )}
-      {locked && <TrialLockOverlay reason={blockReason!} />}
+      {!blockReason && !isFullBleed && <TrialBanner user={user} pendingPlanName={pendingUpgrade?.planName ?? null} />}
+      {locked && (
+        <TrialLockOverlay
+          reason={blockReason!}
+          trialEnded={trialStatus(user).expired}
+          pendingPlanName={pendingUpgrade?.planName ?? null}
+        />
+      )}
       <main className={isFullBleed ? "relative min-h-0 flex-1" : "mx-auto w-full max-w-6xl px-6 py-8"}>
         {locked ? null : children}
       </main>
