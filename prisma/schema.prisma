@@ -24,6 +24,18 @@ enum MessageSender {
   SYSTEM
 }
 
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum UpgradeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 enum FlowStatus {
   NOT_STARTED
   RUNNING
@@ -57,7 +69,8 @@ model Plan {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  users User[]
+  users           User[]
+  upgradeRequests UpgradeRequest[]
 }
 
 model User {
@@ -70,10 +83,21 @@ model User {
   plan          Plan      @relation(fields: [planId], references: [id])
   planExpiresAt DateTime?
   isSuspended   Boolean   @default(false)
+  // Embedded in every JWT; bumping it (password change, suspension, "log out
+  // everywhere") invalidates all tokens issued before, without a token table.
+  tokenVersion  Int       @default(0)
+  // When the account got its free trial — set once at signup, so the trial
+  // can't be restarted by an admin downgrade or a plan change.
+  trialStartedAt DateTime?
+  // Signup onboarding answers ("what brings you here"), purely informational.
+  companyName   String?
+  websiteUrl    String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  chatbots Chatbot[]
+  chatbots        Chatbot[]
+  upgradeRequests UpgradeRequest[] @relation("UpgradeRequestUser")
+  resolvedUpgradeRequests UpgradeRequest[] @relation("UpgradeRequestResolver")
 
   @@index([planId])
 }
@@ -209,4 +233,24 @@ model LiveVisitor {
 
   @@unique([chatbotId, visitorId])
   @@index([chatbotId, lastSeenAt])
+}
+
+// No payment gateway: a customer asks for a plan from Billing, an admin
+// approves it from /admin, and approval is what actually moves the account.
+model UpgradeRequest {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation("UpgradeRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  planId       String
+  plan         Plan                 @relation(fields: [planId], references: [id], onDelete: Cascade)
+  billingCycle BillingCycle         @default(MONTHLY)
+  status       UpgradeRequestStatus @default(PENDING)
+  note         String?
+  resolvedById String?
+  resolvedBy   User?                @relation("UpgradeRequestResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?
+  createdAt    DateTime             @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId])
 }

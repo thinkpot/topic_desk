@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
+import { disconnectUserSockets } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional(),
+  email: z.string().trim().toLowerCase().pipe(z.string().email()).optional(),
   password: z.string().min(8).max(100).optional(),
   planId: z.string().min(1).optional(),
   role: z.enum(["USER", "ADMIN"]).optional(),
@@ -45,7 +46,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       ...(email ? { email } : {}),
       ...(role ? { role } : {}),
       ...(isSuspended !== undefined ? { isSuspended } : {}),
-      ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
+      ...(password ? { password: await hashPassword(password) } : {}),
+      // A new password or a suspension revokes every token issued before it.
+      ...(password || isSuspended === true ? { tokenVersion: { increment: 1 } } : {}),
       ...(planExpiresAt !== undefined ? { planExpiresAt: planExpiresAt ? new Date(planExpiresAt) : null } : {}),
     },
     include: {
@@ -53,6 +56,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       _count: { select: { chatbots: true } },
     },
   });
+
+  // REST routes recheck on every request; open dashboard sockets have to be
+  // cut explicitly or they'd keep receiving live events.
+  if (password || isSuspended === true) disconnectUserSockets(user.id);
 
   const { password: _pw, ...safeUser } = user;
   return NextResponse.json({ user: safeUser });
@@ -71,5 +78,6 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   await prisma.user.delete({ where: { id } });
+  disconnectUserSockets(id);
   return new NextResponse(null, { status: 204 });
 }

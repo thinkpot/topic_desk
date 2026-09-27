@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireActiveUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { verifyConnection } from "@/lib/verify-connection";
 import { appUrlProblem } from "@/lib/webhook";
@@ -14,6 +15,10 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const auth = await requireActiveUser(req);
   if ("response" in auth) return auth.response;
+  // Each verify call fans out to several Telegram API requests with a
+  // user-supplied bot token — cap it so it can't be used as a relay.
+  const limited = rateLimit(req, "telegramVerify", auth.user.id);
+  if (limited) return limited;
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });

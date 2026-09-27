@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { resolveWidgetChatbot } from "@/lib/widget";
@@ -26,6 +27,8 @@ const schema = z.object({
 // host page's CSP blocks the CDN script or the WS upgrade. Same upsert used
 // by the socket path, so the dashboard's Live tab sees either uniformly.
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const limited = rateLimit(req, "widgetRead");
+  if (limited) return withCors(limited);
   const { apiKey } = await params;
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return withCors(NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 }));

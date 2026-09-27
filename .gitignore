@@ -4,3 +4,6 @@ node_modules
 .env.local
 *.log
 *.tsbuildinfo
+
+# macOS finder metadata
+.DS_Store

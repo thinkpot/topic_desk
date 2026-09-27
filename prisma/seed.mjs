@@ -7,7 +7,7 @@ const PLANS = [
   {
     slug: "free",
     name: "Free",
-    description: "One chatbot to try things out.",
+    description: "3-day free trial. No card required.",
     priceINR: 0,
     priceYearlyINR: 0,
     maxChatbots: 1,
@@ -58,7 +58,7 @@ async function main() {
   }
   console.log(`Seeded ${PLANS.length} plans.`);
 
-  const email = process.env.ADMIN_EMAIL;
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) {
     console.log("Skipped admin user: set ADMIN_EMAIL and ADMIN_PASSWORD to create one.");
@@ -66,10 +66,11 @@ async function main() {
   }
 
   const proPlan = await prisma.plan.findUniqueOrThrow({ where: { slug: "pro" } });
-  const hashed = await bcrypt.hash(password, 10);
+  const hashed = await bcrypt.hash(password, 12);
   await prisma.user.upsert({
     where: { email },
-    update: { role: "ADMIN", password: hashed, planId: proPlan.id },
+    // Re-seeding resets the password, so revoke any tokens issued under the old one.
+    update: { role: "ADMIN", password: hashed, planId: proPlan.id, tokenVersion: { increment: 1 } },
     create: {
       name: process.env.ADMIN_NAME ?? "Admin",
       email,

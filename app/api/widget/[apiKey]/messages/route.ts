@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { telegram } from "@/lib/telegram";
@@ -37,6 +38,8 @@ function toClientMessage(m: { id: string; sender: string; text: string; buttons:
 // no conversation yet, is also what starts the flow (the bot gets to speak
 // first, same as Wati/AiSensy triggering on session start).
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const limited = rateLimit(req, "widgetRead");
+  if (limited) return withCors(limited);
   const { apiKey } = await params;
   const visitorId = req.nextUrl.searchParams.get("visitorId");
   const after = req.nextUrl.searchParams.get("after");
@@ -139,6 +142,8 @@ const sendSchema = z.object({
 // it's running; otherwise relays straight into Telegram, creating the topic
 // on first contact — unchanged from before flows existed.
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const limited = rateLimit(req, "widgetWrite");
+  if (limited) return withCors(limited);
   const { apiKey } = await params;
   const parsed = sendSchema.safeParse(await req.json());
   if (!parsed.success) {

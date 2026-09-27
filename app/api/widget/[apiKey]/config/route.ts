@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { resolveWidgetChatbot } from "@/lib/widget";
@@ -12,6 +13,8 @@ export async function OPTIONS() {
 
 // Public: the embed script calls this to bootstrap the widget UI.
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const limited = rateLimit(req, "widgetRead");
+  if (limited) return withCors(limited);
   const { apiKey } = await params;
   const resolved = await resolveWidgetChatbot(apiKey);
   if ("error" in resolved) {

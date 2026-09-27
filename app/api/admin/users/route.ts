@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { hashPassword } from "@/lib/password";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().pipe(z.string().email()),
   password: z.string().min(8).max(100),
   planId: z.string().min(1),
   role: z.enum(["USER", "ADMIN"]).optional(),
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     data: {
       name,
       email,
-      password: await bcrypt.hash(password, 10),
+      password: await hashPassword(password),
       planId,
       role: role ?? "USER",
       planExpiresAt: planExpiresAt ? new Date(planExpiresAt) : null,

@@ -25,6 +25,11 @@ export interface ChatMessagePayload {
   buttons?: unknown;
 }
 
+/** Cuts an account's open dashboard sockets — after suspension, deletion or a password reset. */
+export function disconnectUserSockets(userId: string): void {
+  getIO()?.in(`user:${userId}`).disconnectSockets(true);
+}
+
 /** Dashboard listens on its own room for every live-visitor update across all its chatbots. */
 export function emitLiveUpdate(userId: string, visitor: unknown): void {
   getIO()?.to(`user:${userId}`).emit("live:update", visitor);

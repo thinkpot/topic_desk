@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { BRAND_NAME } from "@/lib/brand";
 
 export default function AuthShell({
   title,
@@ -16,7 +17,7 @@ export default function AuthShell({
     <div className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
       <aside className="hidden flex-col justify-between bg-ink px-12 py-10 text-white lg:flex">
         <Link href="/" className="text-[17px] font-semibold tracking-[-0.02em]">
-          Topicdesk
+          {BRAND_NAME}
         </Link>
         <div>
           <p className="text-[30px] font-semibold leading-tight tracking-[-0.03em]">
@@ -32,7 +33,7 @@ export default function AuthShell({
       <main className="flex items-center justify-center bg-surface px-6 py-14">
         <div className="w-full max-w-[380px]">
           <Link href="/" className="text-[17px] font-semibold tracking-[-0.02em] lg:hidden">
-            Topicdesk
+            {BRAND_NAME}
           </Link>
           <h1 className="mt-8 text-[26px] font-semibold tracking-[-0.025em] lg:mt-0">{title}</h1>
           <p className="mt-1.5 text-[15px] text-ink-2">{subtitle}</p>

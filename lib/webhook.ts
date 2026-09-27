@@ -1,4 +1,5 @@
 import { env } from "./env";
+import { prisma } from "./prisma";
 import { telegram, TelegramApiError } from "./telegram";
 
 export function webhookUrlFor(chatbotId: string): string {
@@ -37,4 +38,42 @@ export async function registerWebhook(
     const detail = err instanceof TelegramApiError ? err.description : "Unexpected error talking to Telegram";
     return { ok: false, error: `Telegram rejected the webhook: ${detail}` };
   }
+}
+
+/**
+ * Points every chatbot's Telegram webhook at the current APP_URL. Run at boot
+ * and whenever the dev tunnel hands out a new URL, so a changed public
+ * address never leaves bots silently delivering replies to a dead host.
+ * Telegram allows one webhook per bot token, so when several chatbots share a
+ * token only the newest one is registered (the same one that would have won
+ * when they were created).
+ */
+export async function syncAllWebhooks(): Promise<{ updated: number; unchanged: number; failed: number }> {
+  const result = { updated: 0, unchanged: 0, failed: 0 };
+  if (appUrlProblem()) return result;
+
+  const bots = await prisma.chatbot.findMany({
+    select: { id: true, botToken: true, webhookSecret: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const seenTokens = new Set<string>();
+  for (const bot of bots) {
+    if (seenTokens.has(bot.botToken)) continue;
+    seenTokens.add(bot.botToken);
+    try {
+      const info = await telegram.getWebhookInfo(bot.botToken);
+      if (info.url === webhookUrlFor(bot.id)) {
+        result.unchanged++;
+        continue;
+      }
+      const registered = await registerWebhook(bot);
+      if (registered.ok) result.updated++;
+      else result.failed++;
+    } catch {
+      // Revoked token, network blip — the per-bot connection health check in
+      // the dashboard surfaces these; don't let one bad bot stop the rest.
+      result.failed++;
+    }
+  }
+  return result;
 }

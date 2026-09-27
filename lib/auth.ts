@@ -1,26 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import { verifyToken } from "./jwt";
-import { prisma } from "./prisma";
 import { accountBlockReason } from "./plans";
+import { userFromToken, type SessionUser } from "./session";
 
-export type SessionUser = Prisma.UserGetPayload<{ include: { plan: true } }>;
+export { userFromToken, type SessionUser };
 
-export function getUserId(req: NextRequest): string | null {
+function bearerToken(req: NextRequest): string | undefined {
   const header = req.headers.get("authorization");
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-  if (!token) return null;
-  try {
-    return verifyToken(token).userId;
-  } catch {
-    return null;
-  }
+  return header?.startsWith("Bearer ") ? header.slice(7) : undefined;
 }
 
 export async function getSessionUser(req: NextRequest): Promise<SessionUser | null> {
-  const userId = getUserId(req);
-  if (!userId) return null;
-  return prisma.user.findUnique({ where: { id: userId }, include: { plan: true } });
+  return userFromToken(bearerToken(req));
 }
 
 export function unauthorized() {
@@ -69,6 +59,9 @@ export function publicUser(user: SessionUser) {
     role: user.role,
     isSuspended: user.isSuspended,
     planExpiresAt: user.planExpiresAt,
+    trialStartedAt: user.trialStartedAt,
+    companyName: user.companyName,
+    websiteUrl: user.websiteUrl,
     plan: {
       id: user.plan.id,
       slug: user.plan.slug,
