@@ -3,8 +3,9 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { apiErrorMessage } from "@/lib/api";
+import { apiErrorMessage, isEmailFieldError } from "@/lib/api";
 import { TRIAL_DAYS } from "@/lib/plans";
+import { emailFormatProblem } from "@/lib/email-format";
 import AuthShell from "@/components/AuthShell";
 import { Alert, Field } from "@/components/ui/primitives";
 
@@ -23,16 +24,31 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Catch the obvious problems before a round trip; the server repeats this
+    // check and additionally verifies the domain can receive mail.
+    const formatProblem = emailFormatProblem(email);
+    if (formatProblem) {
+      setEmailError(formatProblem);
+      return;
+    }
+
+    setEmailError(null);
     setLoading(true);
     try {
       await register({ name, email, password, companyName, websiteUrl });
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      // The server tags email-specific rejections (disposable address, domain
+      // with no mail server) so they appear against the field, not at the top.
+      if (isEmailFieldError(err)) setEmailError(message);
+      else setError(message);
       setLoading(false);
     }
   }
@@ -79,10 +95,21 @@ export default function RegisterPage() {
             required
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            onBlur={() => setEmailError(email ? emailFormatProblem(email) : null)}
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? "email-error" : undefined}
+            className={`input ${emailError ? "border-[color:var(--critical)] focus:border-[color:var(--critical)] focus:ring-[color:var(--critical)]" : ""}`}
             placeholder="you@company.com"
           />
+          {emailError && (
+            <p id="email-error" className="mt-1.5 text-[13px] leading-snug text-[color:var(--critical)]">
+              {emailError}
+            </p>
+          )}
         </Field>
         <Field label="Password" hint="At least 8 characters.">
           <input
