@@ -116,18 +116,26 @@ export function startDevTunnel(port: number, onUrl: (url: string) => void): DevT
     });
   }
 
-  // A quick tunnel can go dead while the cloudflared process stays up, so
-  // probe it end-to-end and recycle it after a few consecutive failures.
+  // A quick tunnel can go dead while the cloudflared process stays up, so probe
+  // it end-to-end and recycle after a few consecutive failures.
+  //
+  // Only an unreachable tunnel counts. Any HTTP response — including a 500 —
+  // proves the hostname still routes here, so it must NOT trigger a recycle:
+  // recycling changes the hostname, and every chatbot's Telegram webhook then
+  // points at a dead host until the next sync. An app-level error is a reason
+  // to fix the app, not to throw the tunnel away.
   setInterval(async () => {
     if (!currentUrl || !child) return;
+    let reachable = false;
     try {
-      const res = await fetch(`${currentUrl}/api/health`, { signal: AbortSignal.timeout(10_000) });
-      healthFailures = res.ok ? 0 : healthFailures + 1;
+      await fetch(`${currentUrl}/api/health`, { signal: AbortSignal.timeout(10_000) });
+      reachable = true;
     } catch {
-      healthFailures++;
+      reachable = false;
     }
+    healthFailures = reachable ? 0 : healthFailures + 1;
     if (healthFailures >= MAX_HEALTH_FAILURES) {
-      console.warn("> [tunnel] Tunnel stopped responding; recycling it");
+      console.warn("> [tunnel] Tunnel unreachable; recycling it");
       healthFailures = 0;
       child.kill();
     }
