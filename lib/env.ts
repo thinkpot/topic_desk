@@ -20,6 +20,28 @@ export function jwtSecretProblem(secret: string | undefined): string | null {
   return null;
 }
 
+const DEFAULT_TOKEN_EXPIRY = "7d";
+
+// jsonwebtoken accepts a number of seconds or a timespan string ("7d", "12h",
+// "2 weeks"). Anything else throws inside jwt.sign(), which takes down login
+// and signup with an error that points nowhere near the cause.
+//
+// `??` was not enough here: a variable that exists but is EMPTY is not nullish,
+// so "" reached jwt.sign() and broke production. Treat blank or malformed
+// values as unset and carry on with the default rather than failing auth over
+// a cosmetic setting.
+const TIMESPAN = /^\d+(\.\d+)?\s*(ms|s|m|h|d|w|y|secs?|seconds?|mins?|minutes?|hrs?|hours?|days?|weeks?|yrs?|years?)?$/i;
+
+function readTokenExpiry(): string {
+  const raw = process.env.JWT_EXPIRES_IN?.trim();
+  if (!raw) return DEFAULT_TOKEN_EXPIRY;
+  if (!TIMESPAN.test(raw)) {
+    console.warn(`> Ignoring invalid JWT_EXPIRES_IN (${JSON.stringify(raw)}); using ${DEFAULT_TOKEN_EXPIRY}.`);
+    return DEFAULT_TOKEN_EXPIRY;
+  }
+  return raw;
+}
+
 export const env = {
   get appUrl(): string {
     return required("APP_URL").replace(/\/+$/, "");
@@ -32,7 +54,9 @@ export const env = {
     }
     return secret;
   },
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  get jwtExpiresIn(): string {
+    return readTokenExpiry();
+  },
   /** Optional: shows this app's own chat widget on its marketing homepage. */
   get supportChatbotApiKey(): string | undefined {
     return process.env.SUPPORT_CHATBOT_API_KEY || undefined;
