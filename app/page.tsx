@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import PricingCards from "@/components/PricingCards";
+import PlanComparison from "@/components/PlanComparison";
 import LiveChatDemo from "@/components/LiveChatDemo";
 import Logo, { LogoLockup } from "@/components/Logo";
 import TrackedLink from "@/components/TrackedLink";
@@ -576,7 +577,10 @@ export default async function Home() {
         </p>
 
         {plans.length > 0 ? (
-          <PricingCards plans={plans} />
+          <>
+            <PricingCards plans={plans} />
+            <PlanComparison plans={plans} />
+          </>
         ) : (
           <p className="mt-10 text-sm text-ink-3">Pricing is being updated — please check back shortly.</p>
         )}

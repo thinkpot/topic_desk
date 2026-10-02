@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/primitives";
 
 export interface PricingPlan {
   id: string;
+  slug: string;
   name: string;
   description: string | null;
   priceINR: number;
