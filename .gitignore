@@ -7,3 +7,6 @@ node_modules
 
 # macOS finder metadata
 .DS_Store
+
+# Personal Claude Code overrides for this project
+.claude/settings.local.json
