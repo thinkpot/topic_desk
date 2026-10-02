@@ -174,6 +174,41 @@
       socket = null;
     }
   }
+  // Supabase Broadcast: the transport that works when the app is hosted
+  // somewhere that cannot keep a socket open (serverless). The channel name is
+  // issued by /config, which already checks the API key and the domain
+  // allowlist, so it doubles as the capability to listen on it.
+  var supabaseChannel = null;
+  function connectSupabase(rt) {
+    if (!rt || !rt.url || !rt.key || !rt.channel) return;
+    if (!window.supabase || typeof window.supabase.createClient !== "function") return;
+    try {
+      var client = window.supabase.createClient(rt.url, rt.key, { auth: { persistSession: false } });
+      supabaseChannel = client.channel(rt.channel);
+      supabaseChannel.on("broadcast", { event: "chat:message" }, function (msg) {
+        handleIncomingMessage(msg.payload);
+      });
+      supabaseChannel.subscribe();
+    } catch (e) {
+      supabaseChannel = null;
+    }
+  }
+  function loadSupabase(rt, cb) {
+    if (!rt || !rt.url) return;
+    try {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+      s.async = true;
+      s.onload = function () {
+        cb(rt);
+      };
+      s.onerror = function () {};
+      document.head.appendChild(s);
+    } catch (e) {
+      /* CDN blocked: the HTTP poll below still delivers */
+    }
+  }
+
   function loadSocketIO(cb) {
     try {
       var s = document.createElement("script");
@@ -631,7 +666,7 @@
     }
   });
 
-  fetch(api("/config"))
+  fetch(api("/config") + "?visitorId=" + encodeURIComponent(visitorId))
     .then(function (r) {
       if (!r.ok) throw new Error("unavailable");
       return r.json();
@@ -651,7 +686,8 @@
         track("view");
       }
 
-      loadSocketIO(connectSocket);
+      if (cfg.realtime) loadSupabase(cfg.realtime, connectSupabase);
+      else loadSocketIO(connectSocket);
       sendHeartbeat();
       setInterval(sendHeartbeat, HEARTBEAT_MS);
       document.addEventListener("visibilitychange", function () {

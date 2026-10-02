@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, publicUser } from "@/lib/auth";
 import { accountBlockReason } from "@/lib/plans";
+import { channelFor, realtimeEnabled } from "@/lib/realtime";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
@@ -27,6 +28,15 @@ export async function GET(req: NextRequest) {
     user: publicUser(user),
     usage: { chatbots: chatbotCount, monthlyConversations },
     blockReason: accountBlockReason(user),
+    // Only an authenticated caller learns its channel name, which is what keeps
+    // a Supabase broadcast channel private without Supabase-side RLS.
+    realtime: realtimeEnabled()
+      ? {
+          url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          key: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+          channel: channelFor("user", user.id),
+        }
+      : null,
     pendingUpgrade: pending
       ? { id: pending.id, planId: pending.plan.id, planName: pending.plan.name, billingCycle: pending.billingCycle, createdAt: pending.createdAt }
       : null,

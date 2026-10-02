@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
 import { api, apiErrorMessage } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { subscribeToChannel } from "@/lib/realtime-client";
 import { Alert, Badge, EmptyState, Spinner } from "@/components/ui/primitives";
 
 interface LiveMessagePreview {
@@ -79,6 +81,8 @@ function timeAgo(iso: string): string {
 }
 
 export default function LivePage() {
+  // Null when realtime isn't configured, which selects the Socket.io path below.
+  const { realtime } = useAuth();
   const [data, setData] = useState<LiveListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -125,60 +129,85 @@ export default function LivePage() {
     loadDetail(selectedId);
   }, [selectedId, loadDetail]);
 
+  // Realtime handlers, shared by both transports.
+  const onLiveUpdate = useCallback((payload: unknown) => {
+    const row = payload as LiveVisitorRow;
+    setData((prev) => {
+      if (!prev) return prev;
+      const isNew = !knownIdsRef.current.has(row.id);
+      knownIdsRef.current.add(row.id);
+      const withoutRow = prev.visitors.filter((v) => v.id !== row.id);
+      const visitors = [row, ...withoutRow]
+        .sort((a, b) => new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime())
+        .slice(0, prev.cap);
+      return { ...prev, visitors, totalLiveCount: prev.totalLiveCount + (isNew ? 1 : 0) };
+    });
+  }, []);
+
+  const onLiveLeft = useCallback((payload: unknown) => {
+    const { id } = payload as { id: string };
+    setData((prev) => {
+      if (!prev) return prev;
+      const wasKnown = knownIdsRef.current.delete(id);
+      return {
+        ...prev,
+        visitors: prev.visitors.filter((v) => v.id !== id),
+        totalLiveCount: Math.max(0, prev.totalLiveCount - (wasKnown ? 1 : 0)),
+      };
+    });
+  }, []);
+
+  const onChatMessage = useCallback(
+    (payload: unknown) => {
+      const { chatbotId, visitorId, message } = payload as {
+        chatbotId: string;
+        visitorId: string;
+        message: LiveDetailMessage;
+      };
+      const current = detailRef.current;
+      if (!current || current.visitor.chatbotId !== chatbotId || current.visitor.visitorId !== visitorId) return;
+      if (!current.conversation) {
+        if (selectedIdRef.current) loadDetail(selectedIdRef.current);
+        return;
+      }
+      setDetail((prev) => {
+        if (!prev || !prev.conversation) return prev;
+        // Both transports can deliver the same message; the id makes the
+        // duplicate harmless.
+        if (prev.conversation.messages.some((m) => m.id === message.id)) return prev;
+        return { ...prev, conversation: { ...prev.conversation, messages: [...prev.conversation.messages, message] } };
+      });
+    },
+    [loadDetail]
+  );
+
+  // Supabase Broadcast when configured — works on any host, including
+  // serverless, where no socket can be held open.
   useEffect(() => {
+    if (!realtime) return;
+    return subscribeToChannel(realtime, {
+      "live:update": onLiveUpdate,
+      "live:left": onLiveLeft,
+      "chat:message": onChatMessage,
+    });
+  }, [realtime, onLiveUpdate, onLiveLeft, onChatMessage]);
+
+  // Socket.io, for when server.ts is running the app (local dev, or a
+  // traditional Node host). Skipped once Supabase is configured.
+  useEffect(() => {
+    if (realtime) return;
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (!token) return;
 
     const socket: Socket = io({ path: "/socket.io", auth: { role: "dashboard", token } });
-
-    socket.on("live:update", (row: LiveVisitorRow) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const isNew = !knownIdsRef.current.has(row.id);
-        knownIdsRef.current.add(row.id);
-        const withoutRow = prev.visitors.filter((v) => v.id !== row.id);
-        const visitors = [row, ...withoutRow]
-          .sort((a, b) => new Date(b.lastSeenAt).getTime() - new Date(a.lastSeenAt).getTime())
-          .slice(0, prev.cap);
-        return { ...prev, visitors, totalLiveCount: prev.totalLiveCount + (isNew ? 1 : 0) };
-      });
-    });
-
-    socket.on("live:left", ({ id }: { id: string }) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const wasKnown = knownIdsRef.current.delete(id);
-        return {
-          ...prev,
-          visitors: prev.visitors.filter((v) => v.id !== id),
-          totalLiveCount: Math.max(0, prev.totalLiveCount - (wasKnown ? 1 : 0)),
-        };
-      });
-    });
-
-    socket.on(
-      "chat:message",
-      (payload: { chatbotId: string; visitorId: string; message: LiveDetailMessage }) => {
-        const current = detailRef.current;
-        if (!current || current.visitor.chatbotId !== payload.chatbotId || current.visitor.visitorId !== payload.visitorId) {
-          return;
-        }
-        if (!current.conversation) {
-          if (selectedIdRef.current) loadDetail(selectedIdRef.current);
-          return;
-        }
-        setDetail((prev) => {
-          if (!prev || !prev.conversation) return prev;
-          if (prev.conversation.messages.some((m) => m.id === payload.message.id)) return prev;
-          return { ...prev, conversation: { ...prev.conversation, messages: [...prev.conversation.messages, payload.message] } };
-        });
-      }
-    );
+    socket.on("live:update", onLiveUpdate);
+    socket.on("live:left", onLiveLeft);
+    socket.on("chat:message", onChatMessage);
 
     return () => {
       socket.disconnect();
     };
-  }, [loadDetail]);
+  }, [realtime, onLiveUpdate, onLiveLeft, onChatMessage]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

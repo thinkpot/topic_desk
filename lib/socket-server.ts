@@ -1,9 +1,22 @@
 import type { Server as SocketIOServer } from "socket.io";
+import { broadcastInBackground, channelFor, realtimeEnabled } from "./realtime";
 
-// server.ts runs the Socket.io server in the same Node process as Next.js's
-// request handler (custom server), so a global is the simplest way for API
-// route handlers to reach the one io instance without threading it through
-// every function signature.
+/**
+ * Realtime fan-out, with two transports behind one API.
+ *
+ * - **Supabase Broadcast**, when configured. Works anywhere, including
+ *   serverless hosts that cannot hold a socket open.
+ * - **Socket.io**, when server.ts is the one running the app (local dev, or a
+ *   traditional Node host).
+ *
+ * Both are attempted; each is a no-op when unavailable, so a deployment that
+ * has only one still delivers, and one that has both delivers twice over
+ * separate paths — clients subscribe to whichever they can reach, and messages
+ * carry ids so a duplicate is discarded rather than rendered twice.
+ *
+ * Callers do not know or care which is in play. server.ts keeps the io instance
+ * on a global because Next bundles route handlers separately from it.
+ */
 declare global {
   // eslint-disable-next-line no-var
   var __io: SocketIOServer | undefined;
@@ -25,18 +38,23 @@ export interface ChatMessagePayload {
   buttons?: unknown;
 }
 
+function emit(kind: "user" | "visitor", id: string, room: string, event: string, payload: unknown): void {
+  getIO()?.to(room).emit(event, payload);
+  if (realtimeEnabled()) broadcastInBackground(channelFor(kind, id), event, payload);
+}
+
 /** Cuts an account's open dashboard sockets — after suspension, deletion or a password reset. */
 export function disconnectUserSockets(userId: string): void {
   getIO()?.in(`user:${userId}`).disconnectSockets(true);
 }
 
-/** Dashboard listens on its own room for every live-visitor update across all its chatbots. */
+/** Dashboard listens on its own channel for every live-visitor update across all its chatbots. */
 export function emitLiveUpdate(userId: string, visitor: unknown): void {
-  getIO()?.to(`user:${userId}`).emit("live:update", visitor);
+  emit("user", userId, `user:${userId}`, "live:update", visitor);
 }
 
 export function emitLiveLeft(userId: string, liveVisitorId: string): void {
-  getIO()?.to(`user:${userId}`).emit("live:left", { id: liveVisitorId });
+  emit("user", userId, `user:${userId}`, "live:left", { id: liveVisitorId });
 }
 
 /** Live tab's detail pane, for a message from either side of a conversation. */
@@ -46,10 +64,10 @@ export function emitChatMessageToDashboard(
   visitorId: string,
   message: ChatMessagePayload
 ): void {
-  getIO()?.to(`user:${userId}`).emit("chat:message", { chatbotId, visitorId, message });
+  emit("user", userId, `user:${userId}`, "chat:message", { chatbotId, visitorId, message });
 }
 
-/** The widget itself, for a dashboard-chat reply arriving without a page reload. */
+/** The widget itself, for an agent or bot reply arriving without a page reload. */
 export function emitChatMessageToWidget(chatbotId: string, visitorId: string, message: ChatMessagePayload): void {
-  getIO()?.to(`visitor:${chatbotId}:${visitorId}`).emit("chat:message", message);
+  emit("visitor", `${chatbotId}:${visitorId}`, `visitor:${chatbotId}:${visitorId}`, "chat:message", message);
 }

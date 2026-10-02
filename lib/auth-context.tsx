@@ -45,6 +45,12 @@ export interface Usage {
   monthlyConversations: number;
 }
 
+export interface RealtimeConfig {
+  url: string;
+  key: string;
+  channel: string;
+}
+
 export interface PendingUpgrade {
   id: string;
   planId: string;
@@ -58,6 +64,7 @@ interface AuthContextValue {
   usage: Usage | null;
   blockReason: string | null;
   pendingUpgrade: PendingUpgrade | null;
+  realtime: RealtimeConfig | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
@@ -72,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [blockReason, setBlockReason] = useState<string | null>(null);
   const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
+  const [realtime, setRealtime] = useState<RealtimeConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -88,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUsage(res.data.usage);
       setBlockReason(res.data.blockReason);
       setPendingUpgrade(res.data.pendingUpgrade);
+      setRealtime(res.data.realtime ?? null);
     } catch {
       setUser(null);
     } finally {
@@ -127,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, usage, blockReason, pendingUpgrade, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, usage, blockReason, pendingUpgrade, realtime, loading, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );
