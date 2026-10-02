@@ -203,7 +203,7 @@ export default function AdminPlansPage() {
                   <dd className="metric font-medium">{formatLimit(plan.maxChatbots)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-2">Visitors / month</dt>
+                  <dt className="text-ink-2">Conversations / month</dt>
                   <dd className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</dd>
                 </div>
                 <div className="flex justify-between">

@@ -158,7 +158,7 @@ export default function Body() {
             <td>Chatshore</td>
             <td>3-day trial, no card</td>
             <td>Flat monthly tier (₹)</td>
-            <td>Telegram, or the dashboard</td>
+            <td>Telegram, or the dashboard (Pro)</td>
           </tr>
           <tr>
             <td>Tawk.to</td>

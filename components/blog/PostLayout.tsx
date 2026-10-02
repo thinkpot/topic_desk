@@ -40,6 +40,9 @@ function SiteFooter() {
           <Link href="/privacy" className="hover:text-ink">
             Privacy
           </Link>
+          <Link href="/refunds" className="hover:text-ink">
+            Refunds
+          </Link>
         </div>
       </div>
     </footer>

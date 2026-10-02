@@ -165,7 +165,7 @@ export default function Body() {
       <h2>When free is the right answer</h2>
       <p>
         If you are one person getting a few conversations a week and do not mind a vendor logo in the corner, a
-        free plan is correct and paying would be waste. Same for a site still finding out whether visitors want
+        free plan is correct and paying would be a waste. Same for a site still finding out whether visitors want
         to chat at all — install something free, leave it a month, read the transcripts.
       </p>
       <p>

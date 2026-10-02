@@ -343,7 +343,7 @@ export default function LivePage() {
                       </>
                     ) : (
                       <>
-                        Replying from the dashboard is a Premium feature.{" "}
+                        Replying from the dashboard is a Pro feature.{" "}
                         <Link href="/dashboard/billing" className="underline underline-offset-2">
                           Upgrade
                         </Link>

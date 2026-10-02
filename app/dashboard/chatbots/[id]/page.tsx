@@ -279,7 +279,7 @@ export default function ChatbotDetailPage() {
           </section>
 
           <section className="surface p-5">
-            <h2 className="text-[15px] font-medium">Session behavior</h2>
+            <h2 className="text-[15px] font-medium">Session behaviour</h2>
             <p className="mt-0.5 text-[13px] text-ink-2">
               Controls when the flow bot re-engages a visitor who&apos;s already been handed off to a human or
               reached the end of the flow.
@@ -337,7 +337,7 @@ export default function ChatbotDetailPage() {
           <section className="surface p-5">
             <div className="flex items-center gap-2">
               <h2 className="text-[15px] font-medium">Dashboard chat</h2>
-              {!user?.plan.supportsDashboardChat && <Badge tone="warning">Premium</Badge>}
+              {!user?.plan.supportsDashboardChat && <Badge tone="warning">Pro</Badge>}
             </div>
             <p className="mt-0.5 text-[13px] text-ink-2">
               When on, visitor messages are handled from this account&apos;s{" "}
@@ -360,7 +360,7 @@ export default function ChatbotDetailPage() {
               </div>
             ) : (
               <p className="mt-4 text-[13px] text-ink-3">
-                Included on Premium.{" "}
+                Included on Pro.{" "}
                 <Link href="/dashboard/billing" className="underline underline-offset-2">
                   Upgrade
                 </Link>{" "}

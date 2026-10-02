@@ -166,7 +166,7 @@ export default function DashboardOverviewPage() {
               <div className="mt-5 space-y-5">
                 <div>
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-ink-2">Visitors</span>
+                    <span className="text-sm text-ink-2">Conversations</span>
                     <span className="metric text-sm font-medium">
                       {monthlyUsed.toLocaleString("en-IN")}
                       <span className="text-ink-3"> / {formatLimit(monthlyLimit)}</span>

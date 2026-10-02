@@ -138,7 +138,7 @@ export default function BillingPage() {
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div>
             <div className="flex items-baseline justify-between">
-              <span className="text-[13px] text-ink-2">Visitors this month</span>
+              <span className="text-[13px] text-ink-2">Conversations this month</span>
               <span className="metric text-[13px] font-medium">
                 {monthlyUsed.toLocaleString("en-IN")}
                 <span className="text-ink-3"> / {formatLimit(monthlyLimit)}</span>
@@ -238,7 +238,7 @@ export default function BillingPage() {
                     <span className="metric font-medium">{formatLimit(plan.maxChatbots)}</span>
                   </li>
                   <li className="flex justify-between">
-                    <span className="text-ink-2">Visitors / month</span>
+                    <span className="text-ink-2">Conversations / month</span>
                     <span className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</span>
                   </li>
                 </ul>

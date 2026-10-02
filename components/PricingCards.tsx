@@ -82,7 +82,7 @@ export default function PricingCards({ plans }: { plans: PricingPlan[] }) {
                   <span className="metric font-medium">{formatLimit(plan.maxChatbots)}</span>
                 </li>
                 <li className="flex justify-between border-b border-line pb-2.5">
-                  <span className="text-ink-2">Visitors / month</span>
+                  <span className="text-ink-2">Conversations / month</span>
                   <span className="metric font-medium">{formatLimit(plan.maxMonthlyUsers)}</span>
                 </li>
                 <li className="flex justify-between border-b border-line pb-2.5">
