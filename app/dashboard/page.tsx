@@ -86,7 +86,7 @@ export default function DashboardOverviewPage() {
     return (
       <div className="mx-auto max-w-2xl pt-2">
         {onboarding ? (
-          <OnboardingChecklist progress={onboarding} firstName={firstName} welcome={welcome} />
+          <OnboardingChecklist progress={onboarding} firstName={firstName} welcome={welcome} asPageHeading />
         ) : (
           <Spinner />
         )}

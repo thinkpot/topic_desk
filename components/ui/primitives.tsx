@@ -79,10 +79,16 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  // The control is nested inside the <label>, which associates the two
+  // implicitly — no id plumbing, and it works for every caller. Previously the
+  // label was a sibling with no htmlFor, so clicking it did nothing and a
+  // screen reader announced an unlabelled edit box.
   return (
     <div>
-      <label className="field-label">{label}</label>
-      {children}
+      <label className="block">
+        <span className="field-label">{label}</span>
+        {children}
+      </label>
       {hint && <p className="field-hint">{hint}</p>}
     </div>
   );

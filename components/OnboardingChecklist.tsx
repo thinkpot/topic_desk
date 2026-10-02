@@ -54,12 +54,16 @@ export default function OnboardingChecklist({
   firstName,
   welcome,
   onDismiss,
+  asPageHeading = false,
 }: {
   progress: OnboardingProgress;
   firstName: string;
   welcome: boolean;
   onDismiss?: () => void;
+  /** True when this is the only content on the page, so its title is the h1. */
+  asPageHeading?: boolean;
 }) {
+  const Heading = asPageHeading ? "h1" : "h2";
   const steps = buildSteps(progress);
   const doneCount = steps.filter((s) => s.done).length;
   const nextIndex = steps.findIndex((s) => !s.done);
@@ -68,9 +72,9 @@ export default function OnboardingChecklist({
     <section className="surface p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[18px] font-semibold tracking-[-0.02em]">
+          <Heading className="text-[18px] font-semibold tracking-[-0.02em]">
             {welcome ? `Welcome, ${firstName} — your trial is live` : "Get your chat live"}
-          </h2>
+          </Heading>
           <p className="mt-1 text-[14px] text-ink-2">
             {welcome
               ? `You have ${TRIAL_DAYS} days on us, no card required. Most people finish these steps in about five minutes.`

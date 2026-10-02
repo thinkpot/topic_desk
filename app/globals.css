@@ -12,6 +12,20 @@
   --line: #e6e4e0;
   --line-strong: #d4d2cd;
 
+  /* The same palette as RGB channels. Tailwind can only build an alpha variant
+     (bg-ink/60, bg-surface/90) from `rgb(var(--x) / <alpha-value>)`, which needs
+     bare channels — a hex value silently produces no rule at all, so the
+     utility compiles to nothing and the element renders fully transparent.
+     The hex vars above stay for direct use in CSS and inline styles. */
+  --plane-rgb: 247 247 245;
+  --surface-rgb: 255 255 255;
+  --surface-sunken-rgb: 242 241 238;
+  --ink-rgb: 10 10 10;
+  --ink-2-rgb: 84 84 84;
+  --ink-3-rgb: 138 138 138;
+  --line-rgb: 230 228 224;
+  --line-strong-rgb: 212 210 205;
+
   /* Data-viz roles (validated against the #ffffff chart surface) */
   --series-1: #2a78d6;
   --funnel-1: #86b6ef;
@@ -173,6 +187,18 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
+  /* A wide table used to push the whole article sideways on a phone. Making it
+     its own scroll container keeps the overflow inside the table. */
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prose table thead,
+.prose table tbody {
+  /* display:block on the table detaches the row groups; this restores the
+     column alignment that collapse would otherwise lose. */
+  display: table;
+  width: 100%;
 }
 .prose th,
 .prose td {

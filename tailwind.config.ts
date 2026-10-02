@@ -5,19 +5,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        plane: "var(--plane)",
+        // rgb(var(--x) / <alpha-value>) rather than a bare hex var, so opacity
+        // modifiers such as bg-ink/60 and bg-surface/90 actually compile.
+        plane: "rgb(var(--plane-rgb) / <alpha-value>)",
         surface: {
-          DEFAULT: "var(--surface)",
-          sunken: "var(--surface-sunken)",
+          DEFAULT: "rgb(var(--surface-rgb) / <alpha-value>)",
+          sunken: "rgb(var(--surface-sunken-rgb) / <alpha-value>)",
         },
         ink: {
-          DEFAULT: "var(--ink)",
-          2: "var(--ink-2)",
-          3: "var(--ink-3)",
+          DEFAULT: "rgb(var(--ink-rgb) / <alpha-value>)",
+          2: "rgb(var(--ink-2-rgb) / <alpha-value>)",
+          3: "rgb(var(--ink-3-rgb) / <alpha-value>)",
         },
         line: {
-          DEFAULT: "var(--line)",
-          strong: "var(--line-strong)",
+          DEFAULT: "rgb(var(--line-rgb) / <alpha-value>)",
+          strong: "rgb(var(--line-strong-rgb) / <alpha-value>)",
         },
         series: "var(--series-1)",
         positive: "var(--positive)",
