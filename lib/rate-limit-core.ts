@@ -36,6 +36,7 @@ export const RATE_LIMITS = {
   register: { limit: 5, windowMs: 60 * 60_000 },
   upgradeRequest: { limit: 10, windowMs: 60 * 60_000 },
   telegramVerify: { limit: 20, windowMs: 10 * 60_000 },
+  verifyEmail: { limit: 10, windowMs: 10 * 60_000 },
   // An open widget polls ~26 times a minute, and an office NAT can put many
   // visitors behind one IP — so reads are generous; writes are what cost.
   widgetRead: { limit: 300, windowMs: 60_000 },

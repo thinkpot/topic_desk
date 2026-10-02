@@ -25,6 +25,7 @@ export interface Me {
   isSuspended: boolean;
   planExpiresAt: string | null;
   trialStartedAt: string | null;
+  emailVerifiedAt: string | null;
   companyName: string | null;
   websiteUrl: string | null;
   plan: UserPlan;

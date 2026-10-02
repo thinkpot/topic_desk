@@ -92,6 +92,14 @@ model User {
   // Signup onboarding answers ("what brings you here"), purely informational.
   companyName   String?
   websiteUrl    String?
+  // Email confirmation. Null until the link is clicked; creating a chatbot is
+  // gated on it, so a throwaway address can't take a trial and serve traffic.
+  emailVerifiedAt      DateTime?
+  // SHA-256 of the emailed token, never the token itself — a database leak
+  // then can't be used to verify anyone's address.
+  verificationTokenHash String?
+  verificationExpiresAt DateTime?
+  verificationSentAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

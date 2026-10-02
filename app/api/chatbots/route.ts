@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/auth";
+import { notifyOperator, sendInBackground } from "@/lib/mailer";
+import { chatbotCreatedEmail } from "@/lib/email-templates";
 import { accountBlockReason, formatLimit } from "@/lib/plans";
 import { generateApiKey, generateWebhookSecret } from "@/lib/keys";
 import { verifyConnection } from "@/lib/verify-connection";
@@ -54,6 +56,16 @@ export async function POST(req: NextRequest) {
 
   const blocked = accountBlockReason(user);
   if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
+
+  // Confirmed address required before a chatbot can serve traffic: the trial
+  // takes no card, so this is the only thing standing between a throwaway
+  // address and a live widget.
+  if (!user.emailVerifiedAt) {
+    return NextResponse.json(
+      { error: "Confirm your email address before creating a chatbot.", field: "emailVerification" },
+      { status: 403 }
+    );
+  }
 
   const parsed = createSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
@@ -115,6 +127,18 @@ export async function POST(req: NextRequest) {
     await prisma.chatbot.delete({ where: { id: bot.id } });
     return NextResponse.json({ error: webhook.error }, { status: 502 });
   }
+
+  sendInBackground(() =>
+    notifyOperator(
+      chatbotCreatedEmail({
+        chatbotName: safeBot.name,
+        ownerName: user.name,
+        ownerEmail: user.email,
+        planName: user.plan.name,
+        allowedDomains: safeBot.allowedDomains,
+      })
+    )
+  );
 
   return NextResponse.json({ chatbot: safeBot }, { status: 201 });
 }

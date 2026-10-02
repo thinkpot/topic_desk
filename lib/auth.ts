@@ -60,6 +60,7 @@ export function publicUser(user: SessionUser) {
     isSuspended: user.isSuspended,
     planExpiresAt: user.planExpiresAt,
     trialStartedAt: user.trialStartedAt,
+    emailVerifiedAt: user.emailVerifiedAt,
     companyName: user.companyName,
     websiteUrl: user.websiteUrl,
     plan: {

@@ -7,6 +7,9 @@ import { hashPassword } from "@/lib/password";
 import { rateLimit } from "@/lib/rate-limit";
 import { TRIAL_PLAN_SLUG, trialEndsAt } from "@/lib/plans";
 import { emailSignupProblem } from "@/lib/email";
+import { issueVerification } from "@/lib/verification";
+import { notifyOperator, sendInBackground } from "@/lib/mailer";
+import { newSignupEmail } from "@/lib/email-templates";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -62,6 +65,13 @@ export async function POST(req: NextRequest) {
       },
       include: { plan: true },
     });
+
+    // Both sends are fire-and-forget: a slow or failing email provider must not
+    // delay the response, and must never turn a created account into an error.
+    sendInBackground(() => issueVerification(user).then((r) => ({ sent: r.ok, reason: r.reason })));
+    sendInBackground(() =>
+      notifyOperator(newSignupEmail({ ...user, trialEndsAt: user.planExpiresAt }))
+    );
 
     const token = signToken({ userId: user.id, v: user.tokenVersion });
     return NextResponse.json({ token, user: publicUser(user) }, { status: 201 });

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/Navbar";
 import TrialLockOverlay from "@/components/TrialLockOverlay";
 import TrialBanner from "@/components/TrialBanner";
+import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { trialStatus } from "@/lib/plans";
 import { Spinner } from "@/components/ui/primitives";
 
@@ -40,6 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="mx-auto max-w-6xl px-6 py-2.5 text-[13px] text-[#7a5800]">{blockReason}</div>
         </div>
       )}
+      {!isFullBleed && <VerifyEmailBanner />}
       {!blockReason && !isFullBleed && <TrialBanner user={user} pendingPlanName={pendingUpgrade?.planName ?? null} />}
       {locked && (
         <TrialLockOverlay
