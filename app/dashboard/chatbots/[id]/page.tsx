@@ -173,7 +173,7 @@ export default function ChatbotDetailPage() {
               every page where the chat should appear.
             </p>
             <div className="mt-4">
-              <CodeBlock code={embedCode} label="Embed snippet" />
+              <CodeBlock code={embedCode} label="Embed snippet" track="widget_snippet_copied" />
             </div>
             <p className="mt-3 text-[13px] text-ink-3">
               Works on any site — WordPress, Shopify, Webflow, or plain HTML. No build step needed.

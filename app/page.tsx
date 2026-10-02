@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import PricingCards from "@/components/PricingCards";
 import LiveChatDemo from "@/components/LiveChatDemo";
 import Logo, { LogoLockup } from "@/components/Logo";
+import TrackedLink from "@/components/TrackedLink";
 import { BRAND_NAME } from "@/lib/brand";
 
 // Rendered per request so the build never needs a database connection.
@@ -297,9 +298,9 @@ export default async function Home() {
             <Link href="/login" className="btn-ghost btn-sm">
               Log in
             </Link>
-            <Link href="/register" className="btn-primary btn-sm">
+            <TrackedLink href="/register" location="header" className="btn-primary btn-sm">
               Start free trial
-            </Link>
+            </TrackedLink>
           </div>
         </div>
       </header>
@@ -317,9 +318,9 @@ export default async function Home() {
               own topic. Your team replies from Telegram on their phone, and the answer appears on your site.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/register" className="btn-primary px-6 py-3">
+              <TrackedLink href="/register" location="hero" className="btn-primary px-6 py-3">
                 Start your free trial
-              </Link>
+              </TrackedLink>
               <a href="#how" className="btn-secondary px-6 py-3">
                 See how it works
               </a>
@@ -433,9 +434,9 @@ export default async function Home() {
         </div>
 
         <div className="mt-8">
-          <Link href="/register" className="btn-primary px-6 py-3">
+          <TrackedLink href="/register" location="flow_builder" className="btn-primary px-6 py-3">
             Start your free trial
-          </Link>
+          </TrackedLink>
           <p className="mt-3 text-[13px] text-ink-3">Free for 3 days. No credit card, no payment details.</p>
         </div>
       </section>
@@ -542,9 +543,9 @@ export default async function Home() {
           ))}
         </div>
 
-        <Link href="/register" className="btn-primary mt-10 px-6 py-3">
+        <TrackedLink href="/register" location="compatibility" className="btn-primary mt-10 px-6 py-3">
           Add it to your site
-        </Link>
+        </TrackedLink>
       </section>
 
       {/* FAQ */}

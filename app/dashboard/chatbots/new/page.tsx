@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Alert, Field } from "@/components/ui/primitives";
+import { trackEvent } from "@/lib/gtag";
 
 interface ConnectionCheck {
   key: string;
@@ -101,6 +102,9 @@ export default function NewChatbotPage() {
         allowedDomains: allowedDomains.trim() || undefined,
       });
       await refresh();
+      // The activation moment: Telegram verified and the webhook registered,
+      // so this chatbot can now serve real traffic.
+      trackEvent("chatbot_created", { has_allowed_domains: !!allowedDomains.trim() });
       router.push(`/dashboard/chatbots/${res.data.chatbot.id}?created=1`);
     } catch (err) {
       setError(apiErrorMessage(err));
@@ -159,7 +163,14 @@ export default function NewChatbotPage() {
           </Field>
 
           <div className="flex justify-end">
-            <button disabled={!name.trim()} onClick={() => setStep(1)} className="btn-primary">
+            <button
+              disabled={!name.trim()}
+              onClick={() => {
+                trackEvent("chatbot_setup_started");
+                setStep(1);
+              }}
+              className="btn-primary"
+            >
               Continue
             </button>
           </div>

@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { BRAND_NAME } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
+import Analytics from "@/components/Analytics";
 
 export const metadata: Metadata = {
   // Makes canonical links and the OG image resolve to absolute URLs; without
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Analytics />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

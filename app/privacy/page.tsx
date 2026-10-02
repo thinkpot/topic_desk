@@ -90,8 +90,12 @@ export default function PrivacyPolicyPage() {
           websites.
         </li>
         <li>
-          <strong>No advertising and no analytics trackers.</strong> We run no third-party analytics, advertising or
-          social pixels in the widget or the dashboard.
+          <strong>No advertising trackers and no social pixels</strong>, anywhere.
+        </li>
+        <li>
+          <strong>Nothing third-party inside the chat widget.</strong> The widget we put on our customers&apos;
+          websites loads no analytics and sets no cookies — so visitors to their sites are not measured by us at
+          all. That is a deliberate product decision, not just a policy.
         </li>
         <li>
           <strong>We never sell personal data</strong>, and we do not share it for anyone else&apos;s marketing.
@@ -101,7 +105,25 @@ export default function PrivacyPolicyPage() {
         </li>
       </ul>
 
-      <h2>5. Who else receives data</h2>
+      <h2>5. Analytics and cookies on this website</h2>
+      <p>
+        We use Google Analytics on chatshore.vercel.app to understand how people find us and where they get stuck —
+        which pages are read, which buttons are used, and how many visitors go on to start a trial. It sets cookies
+        in your browser and sends Google your IP address, the pages you view and basic device information.
+      </p>
+      <p>
+        We never send Google your name, your email address or anything typed into a chat. We do not use it for
+        advertising and we do not combine it with your account to build a profile of you.
+      </p>
+      <p>
+        You can opt out with Google&apos;s{" "}
+        <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">
+          browser add-on
+        </a>
+        , or by blocking the script — the site works normally either way, and nothing we do depends on it.
+      </p>
+
+      <h2>6. Who else receives data</h2>
       <p>Running the service means a small number of other companies necessarily handle data:</p>
       <ul>
         <li>
@@ -128,7 +150,7 @@ export default function PrivacyPolicyPage() {
         abroad.
       </p>
 
-      <h2>6. How long we keep it</h2>
+      <h2>7. How long we keep it</h2>
       <ul>
         <li>
           <strong>Account and chatbot data</strong> — for as long as the account exists.
@@ -147,7 +169,7 @@ export default function PrivacyPolicyPage() {
         group&apos;s owner controls that.
       </p>
 
-      <h2>7. How we protect it</h2>
+      <h2>8. How we protect it</h2>
       <ul>
         <li>Passwords are stored using bcrypt, and are never recoverable in plain text.</li>
         <li>All traffic runs over HTTPS.</li>
@@ -166,7 +188,7 @@ export default function PrivacyPolicyPage() {
         Protection Board as the law requires.
       </p>
 
-      <h2>8. Your rights</h2>
+      <h2>9. Your rights</h2>
       <p>
         Under the Digital Personal Data Protection Act, 2023, you may ask us to give you a copy of your personal
         data, correct anything inaccurate, erase it, or nominate someone to exercise these rights if you die or
@@ -178,19 +200,19 @@ export default function PrivacyPolicyPage() {
         You can delete most data yourself at any time from your dashboard.
       </p>
 
-      <h2>9. Children</h2>
+      <h2>10. Children</h2>
       <p>
         {BRAND_NAME} is a business tool and is not directed at children. We do not knowingly collect personal data
         from anyone under 18. If you believe a child&apos;s data has reached us, write to us and we will delete it.
       </p>
 
-      <h2>10. Changes</h2>
+      <h2>11. Changes</h2>
       <p>
         We will update this page when our practices change, and revise the date at the top. If a change materially
         affects your rights we will email account holders before it takes effect.
       </p>
 
-      <h2>11. Grievances</h2>
+      <h2>12. Grievances</h2>
       <p>
         Our Grievance Officer under the Digital Personal Data Protection Act, 2023 and the Information Technology
         Act, 2000 is {LEGAL.grievanceOfficer.name},{" "}

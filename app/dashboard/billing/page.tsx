@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
+import { trackEvent } from "@/lib/gtag";
 import { useAuth } from "@/lib/auth-context";
 import {
   formatLimit,
@@ -38,6 +39,7 @@ export default function BillingPage() {
   const trial = user ? trialStatus(user) : null;
 
   function openRequest(plan: PublicPlan) {
+    trackEvent("upgrade_dialog_opened", { plan: plan.slug, billing_cycle: yearly ? "yearly" : "monthly" });
     setRequesting(plan);
     setNote("");
     setRequestError(null);
@@ -48,10 +50,13 @@ export default function BillingPage() {
     setSubmitting(true);
     setRequestError(null);
     try {
-      await api.post("/upgrade-requests", {
-        planId: requesting.id,
-        billingCycle: yearly && requesting.priceYearlyINR > 0 ? "YEARLY" : "MONTHLY",
-        note,
+      const billingCycle = yearly && requesting.priceYearlyINR > 0 ? "YEARLY" : "MONTHLY";
+      await api.post("/upgrade-requests", { planId: requesting.id, billingCycle, note });
+      trackEvent("upgrade_requested", {
+        plan: requesting.slug,
+        billing_cycle: billingCycle.toLowerCase(),
+        value: billingCycle === "YEARLY" ? requesting.priceYearlyINR : requesting.priceINR,
+        currency: "INR",
       });
       await refresh();
       setRequesting(null);

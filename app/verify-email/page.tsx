@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { trackEvent } from "@/lib/gtag";
 import AuthShell from "@/components/AuthShell";
 import { Spinner } from "@/components/ui/primitives";
 
@@ -44,7 +45,10 @@ export default function VerifyEmailPage() {
     }
     api
       .post("/auth/verify-email", { token })
-      .then((res) => setState(res.data.outcome))
+      .then((res) => {
+        setState(res.data.outcome);
+        if (res.data.outcome === "verified") trackEvent("email_verified");
+      })
       .catch((err) => setState(err?.response?.data?.outcome ?? "error"));
   }, []);
 

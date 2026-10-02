@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import { trackEvent, type AnalyticsEvent } from "@/lib/gtag";
 
 export function Badge({
   children,
@@ -123,13 +124,23 @@ export function Toggle({
   );
 }
 
-export function CopyButton({ value, className = "" }: { value: string; className?: string }) {
+export function CopyButton({
+  value,
+  className = "",
+  track,
+}: {
+  value: string;
+  className?: string;
+  /** Optional analytics event fired on a successful copy. */
+  track?: AnalyticsEvent;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
       onClick={async () => {
         await navigator.clipboard.writeText(value);
+        if (track) trackEvent(track);
         setCopied(true);
         setTimeout(() => setCopied(false), 1600);
       }}
@@ -140,12 +151,12 @@ export function CopyButton({ value, className = "" }: { value: string; className
   );
 }
 
-export function CodeBlock({ code, label }: { code: string; label?: string }) {
+export function CodeBlock({ code, label, track }: { code: string; label?: string; track?: AnalyticsEvent }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-[#0f0f0f]">
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
         <span className="text-[11px] font-medium uppercase tracking-[0.09em] text-white/50">{label ?? "Snippet"}</span>
-        <CopyButton value={code} className="border-white/20 bg-white/10 text-white hover:bg-white/20" />
+        <CopyButton value={code} track={track} className="border-white/20 bg-white/10 text-white hover:bg-white/20" />
       </div>
       <pre className="overflow-x-auto px-4 py-3.5 text-[12.5px] leading-relaxed text-[#e8e8e8]">
         <code>{code}</code>

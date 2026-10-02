@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "./api";
+import { trackEvent } from "./gtag";
 
 export interface UserPlan {
   id: string;
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
+    trackEvent("login", { role: res.data.user.role });
     await refresh();
     router.push(res.data.user.role === "ADMIN" ? "/admin" : "/dashboard");
   }
@@ -110,6 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.post("/auth/register", input);
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
+    // No email or name here: GA must never receive personal data.
+    trackEvent("sign_up", { method: "email", has_company: !!input.companyName });
     await refresh();
     // ?welcome=1 opens the dashboard on the onboarding checklist's intro.
     router.push("/dashboard?welcome=1");
