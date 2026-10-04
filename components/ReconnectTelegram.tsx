@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import { api, apiErrorMessage } from "@/lib/api";
 import { Field } from "@/components/ui/primitives";
 
@@ -66,6 +67,10 @@ export default function ReconnectTelegram({
     }
   }
 
+  // Save re-verifies server-side regardless (PATCH runs the same check before
+  // writing anything), so it doesn't require Check connection to have been
+  // clicked first — that button is a preview, not a gate. A failed save still
+  // shows the checklist, exactly like a failed check would.
   async function save() {
     setSaving(true);
     setError(null);
@@ -77,6 +82,8 @@ export default function ReconnectTelegram({
       setOpen(false);
     } catch (err) {
       setError(apiErrorMessage(err));
+      const connection = axios.isAxiosError(err) ? err.response?.data?.connection : undefined;
+      if (connection) setResult(connection);
     } finally {
       setSaving(false);
     }
@@ -162,10 +169,10 @@ export default function ReconnectTelegram({
       )}
 
       <div className="flex justify-end gap-2.5">
-        <button onClick={check} disabled={checking} className="btn-secondary btn-sm">
+        <button onClick={check} disabled={checking || saving} className="btn-secondary btn-sm">
           {checking ? "Checking…" : "Check connection"}
         </button>
-        <button onClick={save} disabled={!result?.ok || saving} className="btn-primary btn-sm">
+        <button onClick={save} disabled={checking || saving} className="btn-primary btn-sm">
           {saving ? "Saving…" : "Save"}
         </button>
       </div>
