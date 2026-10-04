@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/auth";
 import { telegram } from "@/lib/telegram";
+import { verifyConnection } from "@/lib/verify-connection";
+import { registerWebhook } from "@/lib/webhook";
 import { WIDGET_THEME_KEYS, WIDGET_FONT_KEYS } from "@/lib/widget-appearance";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -30,6 +33,11 @@ const updateSchema = z.object({
   restartKeywords: z.string().max(500).optional(),
   keepVariablesAcrossSessions: z.boolean().optional(),
   dashboardChatEnabled: z.boolean().optional(),
+  // Reconnecting to a different bot or group — both optional and independent,
+  // since changing only the group shouldn't require re-pasting a token that
+  // was never sent back to the browser to begin with.
+  botToken: z.string().min(20).optional(),
+  groupChatId: z.string().min(1).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
@@ -47,7 +55,55 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Dashboard chat isn't included in your current plan." }, { status: 403 });
   }
 
-  const updated = await prisma.chatbot.update({ where: { id: bot.id }, data: parsed.data });
+  const { botToken: newBotToken, groupChatId: newGroupChatId, ...rest } = parsed.data;
+  const reconnecting = newBotToken !== undefined || newGroupChatId !== undefined;
+  const data: Prisma.ChatbotUpdateInput = { ...rest };
+
+  if (reconnecting) {
+    const botToken = newBotToken?.trim() || bot.botToken;
+    const groupChatId = newGroupChatId?.trim() || bot.groupChatId;
+
+    if (botToken !== bot.botToken) {
+      const tokenInUse = await prisma.chatbot.findFirst({
+        where: { botToken, id: { not: bot.id } },
+        select: { id: true },
+      });
+      if (tokenInUse) {
+        return NextResponse.json(
+          {
+            error:
+              "This Telegram bot is already connected to a chatbot. Each chatbot needs its own bot from @BotFather.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    const connection = await verifyConnection(botToken, groupChatId);
+    if (!connection.ok) {
+      const firstProblem = connection.checks.find((c) => !c.ok);
+      return NextResponse.json(
+        {
+          error: firstProblem ? `${firstProblem.label}: ${firstProblem.detail}` : "Telegram connection failed",
+          connection,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Telegram allows one webhook per bot token, so a token change must be
+    // repointed before anything relies on it — same order creation uses.
+    if (botToken !== bot.botToken) {
+      const webhook = await registerWebhook({ id: bot.id, botToken, webhookSecret: bot.webhookSecret });
+      if (!webhook.ok) return NextResponse.json({ error: webhook.error }, { status: 502 });
+    }
+
+    data.botToken = botToken;
+    data.groupChatId = groupChatId;
+    data.botUsername = connection.botUsername ?? undefined;
+  }
+
+  const updated = await prisma.chatbot.update({ where: { id: bot.id }, data });
   const { botToken, webhookSecret, ...safeBot } = updated;
   return NextResponse.json({ chatbot: safeBot });
 }

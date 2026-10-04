@@ -9,6 +9,7 @@ import type { Analytics } from "@/lib/analytics";
 import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
 import TelegramConnection from "@/components/TelegramConnection";
+import ReconnectTelegram from "@/components/ReconnectTelegram";
 import ThemeFontPicker from "@/components/ThemeFontPicker";
 import { Alert, Badge, CodeBlock, CopyButton, Field, Modal, Spinner, StatTile, Toggle } from "@/components/ui/primitives";
 
@@ -17,6 +18,7 @@ interface Chatbot {
   name: string;
   apiKey: string;
   botUsername: string | null;
+  groupChatId: string;
   isActive: boolean;
   welcomeMessage: string;
   widgetTheme: string;
@@ -244,6 +246,13 @@ export default function ChatbotDetailPage() {
               </div>
               <Toggle checked={bot.isActive} onChange={(next) => save({ isActive: next })} label="Widget is live" />
             </div>
+
+            <ReconnectTelegram
+              chatbotId={bot.id}
+              botUsername={bot.botUsername}
+              groupChatId={bot.groupChatId}
+              onSaved={(next) => setBot((prev) => (prev ? { ...prev, ...next } : prev))}
+            />
 
             <div className="space-y-5 p-5">
               <Field label="Name">
