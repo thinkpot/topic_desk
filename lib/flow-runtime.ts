@@ -48,8 +48,9 @@ export async function handOffToHuman(
     if (!line) continue;
     try {
       await telegram.sendMessage(bot.botToken, bot.groupChatId, line, topicId);
-    } catch {
-      // context is a nicety; never fail the handoff over it
+    } catch (error) {
+      // context is a nicety; never fail the handoff over it — but still worth a trace.
+      console.error(`> [telegram] context line failed for chatbot ${bot.id}:`, error);
     }
   }
 

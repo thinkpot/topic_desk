@@ -254,8 +254,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!bot.dashboardChatEnabled) {
       try {
         await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
-      } catch {
-        // The message is saved and shown in the widget even if the Telegram relay fails momentarily.
+      } catch (error) {
+        // The message is saved and shown in the widget even if the Telegram relay fails momentarily —
+        // but a persistent failure (revoked token, bot removed from the group) should still show up
+        // somewhere, or it looks identical to "working" forever.
+        console.error(`> [telegram] sendMessage failed for chatbot ${bot.id}:`, error);
       }
     }
   }
