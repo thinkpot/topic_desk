@@ -239,9 +239,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   } else {
     // Plain human relay: ENDED-without-a-topic and NOT_STARTED-with-no-flow
     // both fall through here and get a topic the same way first contact does.
-    // A dashboard-chat bot never gets a topic at all, so guard on flowStatus
-    // (which handOffToHuman always sets) rather than topicId being present.
-    if (conversation.flowStatus !== "HANDED_OFF") {
+    // A HANDED_OFF conversation normally already has one, EXCEPT when it was
+    // handed off while dashboardChatEnabled was on (that branch sets the
+    // status without creating a topic). If that's since been turned back
+    // off, this conversation would otherwise relay to Telegram forever with
+    // topicId null — backfill a topic rather than assume flowStatus alone
+    // means one exists.
+    if (conversation.flowStatus !== "HANDED_OFF" || (!bot.dashboardChatEnabled && !conversation.topicId)) {
       try {
         conversation = await handOffToHuman(bot, conversation, visitorId, visitorName);
       } catch {
