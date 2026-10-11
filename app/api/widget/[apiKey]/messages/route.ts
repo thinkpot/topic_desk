@@ -7,7 +7,7 @@ import { isDomainAllowed } from "@/lib/domain";
 import { telegram } from "@/lib/telegram";
 import { resolveWidgetChatbot } from "@/lib/widget";
 import { FlowGraph } from "@/lib/flow-engine";
-import { handOffToHuman, runConversationTurn, needsSessionRestart, restartSession } from "@/lib/flow-runtime";
+import { handOffToHuman, runConversationTurn, needsHandoff, needsSessionRestart, restartSession } from "@/lib/flow-runtime";
 import { emitChatMessageToDashboard } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
@@ -239,13 +239,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   } else {
     // Plain human relay: ENDED-without-a-topic and NOT_STARTED-with-no-flow
     // both fall through here and get a topic the same way first contact does.
-    // A HANDED_OFF conversation normally already has one, EXCEPT when it was
-    // handed off while dashboardChatEnabled was on (that branch sets the
-    // status without creating a topic). If that's since been turned back
-    // off, this conversation would otherwise relay to Telegram forever with
-    // topicId null — backfill a topic rather than assume flowStatus alone
-    // means one exists.
-    if (conversation.flowStatus !== "HANDED_OFF" || (!bot.dashboardChatEnabled && !conversation.topicId)) {
+    // See needsHandoff for why this isn't just `flowStatus !== "HANDED_OFF"`.
+    if (needsHandoff(conversation, bot)) {
       try {
         conversation = await handOffToHuman(bot, conversation, visitorId, visitorName);
       } catch {

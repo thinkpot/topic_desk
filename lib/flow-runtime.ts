@@ -57,8 +57,26 @@ export async function handOffToHuman(
   return updated;
 }
 
+/**
+ * Whether a conversation needs (re-)handing off before a visitor message can
+ * relay to Telegram. True for anything not yet handed off, and — this is the
+ * case that used to be missed — also true for a HANDED_OFF conversation that
+ * has no topic yet, which happens whenever handOffToHuman ran while
+ * dashboardChatEnabled was on (it marks the conversation HANDED_OFF without
+ * creating one). If that setting is later turned back off, relying on
+ * flowStatus alone would relay to Telegram with a null topicId forever;
+ * checking topicId directly makes this self-healing instead.
+ */
+export function needsHandoff(
+  conversation: Pick<Conversation, "flowStatus" | "topicId">,
+  bot: Pick<Chatbot, "dashboardChatEnabled">
+): boolean {
+  if (conversation.flowStatus !== "HANDED_OFF") return true;
+  return !bot.dashboardChatEnabled && conversation.topicId === null;
+}
+
 /** True once a HANDED_OFF/ENDED conversation has gone quiet longer than the chatbot's timeout. */
-export function isSessionStale(conversation: Conversation, timeoutMinutes: number): boolean {
+export function isSessionStale(conversation: Pick<Conversation, "lastMessageAt">, timeoutMinutes: number): boolean {
   const ageMs = Date.now() - conversation.lastMessageAt.getTime();
   return ageMs > timeoutMinutes * 60 * 1000;
 }
@@ -81,8 +99,8 @@ export function matchesRestartKeyword(text: string, restartKeywordsCsv: string):
  * their time answering doesn't get bumped back to the start.
  */
 export function needsSessionRestart(params: {
-  chatbot: Chatbot;
-  conversation: Conversation;
+  chatbot: Pick<Chatbot, "sessionTimeoutMinutes" | "restartKeywords">;
+  conversation: Pick<Conversation, "flowStatus" | "lastMessageAt">;
   flowEnabled: boolean;
   /** The visitor's just-typed text, if this check is happening on a POST. Omit for a GET (chat re-open, nothing typed yet). */
   incomingText?: string;
