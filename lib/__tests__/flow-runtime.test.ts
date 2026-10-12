@@ -4,7 +4,27 @@ import {
   needsSessionRestart,
   isSessionStale,
   matchesRestartKeyword,
+  routesToFlow,
 } from "@/lib/flow-runtime";
+
+describe("routesToFlow", () => {
+  // Regression: the owner's own browser had a conversation left RUNNING from
+  // when a flow was on. After the flow was switched off, every message still
+  // went into it and never reached Telegram.
+  it("does not route a leftover RUNNING conversation into a disabled flow", () => {
+    expect(routesToFlow({ flowStatus: "RUNNING" }, false)).toBe(false);
+  });
+
+  it("routes a RUNNING conversation into an enabled flow", () => {
+    expect(routesToFlow({ flowStatus: "RUNNING" }, true)).toBe(true);
+  });
+
+  it("never routes handed-off or ended conversations into the flow", () => {
+    for (const flowStatus of ["HANDED_OFF", "ENDED", "NOT_STARTED"] as const) {
+      expect(routesToFlow({ flowStatus }, true)).toBe(false);
+    }
+  });
+});
 
 const HOUR = 60 * 60 * 1000;
 

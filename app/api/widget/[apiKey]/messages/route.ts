@@ -13,6 +13,7 @@ import {
   needsSessionRestart,
   relayVisitorMessage,
   restartSession,
+  routesToFlow,
 } from "@/lib/flow-runtime";
 import { emitChatMessageToDashboard } from "@/lib/socket-server";
 
@@ -228,7 +229,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     conversation = await restartSession(bot, conversation);
   }
 
-  if (conversation.flowStatus === "RUNNING" && flow) {
+  if (flow && routesToFlow(conversation, flowActive)) {
     const { botMessages, conversation: updated } = await runConversationTurn({
       bot,
       graph: { nodes: flow.nodes, edges: flow.edges } as unknown as FlowGraph,

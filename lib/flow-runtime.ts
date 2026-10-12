@@ -57,6 +57,17 @@ export async function handOffToHuman(
   return updated;
 }
 
+/**
+ * Whether a visitor message goes to the chatbot flow rather than straight to a
+ * human. Requires the flow to be ENABLED, not merely to exist: a conversation
+ * left RUNNING from when the flow was on would otherwise keep feeding every
+ * message into a switched-off flow that never hands off — the returning
+ * visitor is silently stuck while brand-new visitors relay fine.
+ */
+export function routesToFlow(conversation: Pick<Conversation, "flowStatus">, flowEnabled: boolean): boolean {
+  return flowEnabled && conversation.flowStatus === "RUNNING";
+}
+
 /** Telegram's answer when a topic id doesn't exist in the group — deleted, or left over from another group/bot. */
 export function isMissingTopicError(err: unknown): boolean {
   return err instanceof TelegramApiError && /thread not found|topic_deleted/i.test(err.description);
