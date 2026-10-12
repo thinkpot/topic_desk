@@ -136,6 +136,11 @@ export default function PrivacyPolicyPage() {
           so the service can run.
         </li>
         <li>
+          <strong>Our email provider</strong> — delivers account emails to customers and, when a customer switches on
+          automatic follow-ups, one follow-up email on that customer&apos;s behalf to a visitor who shared their email
+          address in the chat. Replies go to the customer, not to us.
+        </li>
+        <li>
           <strong>A public script CDN</strong> — the widget loads its real-time connection library from a public
           content delivery network, so a visitor&apos;s browser contacts that CDN. It receives the request itself,
           not the conversation.

@@ -10,6 +10,7 @@ import ActivityChart from "@/components/charts/ActivityChart";
 import Funnel from "@/components/charts/Funnel";
 import TelegramConnection from "@/components/TelegramConnection";
 import ReconnectTelegram from "@/components/ReconnectTelegram";
+import FollowUpSettings from "@/components/FollowUpSettings";
 import ThemeFontPicker from "@/components/ThemeFontPicker";
 import { Alert, Badge, CodeBlock, CopyButton, Field, Modal, Spinner, StatTile, Toggle } from "@/components/ui/primitives";
 
@@ -28,6 +29,10 @@ interface Chatbot {
   restartKeywords: string;
   keepVariablesAcrossSessions: boolean;
   dashboardChatEnabled: boolean;
+  followUpEnabled: boolean;
+  followUpDelayHours: number;
+  followUpSubject: string | null;
+  followUpBody: string | null;
 }
 
 type Tab = "install" | "metrics" | "settings";
@@ -342,6 +347,17 @@ export default function ChatbotDetailPage() {
               </div>
             </div>
           </section>
+
+          <FollowUpSettings
+            chatbotId={bot.id}
+            value={{
+              followUpEnabled: bot.followUpEnabled,
+              followUpDelayHours: bot.followUpDelayHours,
+              followUpSubject: bot.followUpSubject,
+              followUpBody: bot.followUpBody,
+            }}
+            save={save}
+          />
 
           <section className="surface p-5">
             <div className="flex items-center gap-2">

@@ -38,8 +38,14 @@ export async function sendEmail(options: {
   html: string;
   text: string;
   replyTo?: string;
+  /** Display name shown instead of EMAIL_FROM's own, e.g. a customer's business. The address stays ours. */
+  fromName?: string;
 }): Promise<SendResult> {
-  const { apiKey, from } = config();
+  const { apiKey, from: configuredFrom } = config();
+  const from =
+    configuredFrom && options.fromName
+      ? `${options.fromName.replace(/[<>"\r\n]/g, "").trim()} <${configuredFrom.match(/<([^>]+)>/)?.[1] ?? configuredFrom}>`
+      : configuredFrom;
 
   // Unconfigured is a normal state: local development and self-hosters without
   // an email provider should still work, so log what would have gone out.

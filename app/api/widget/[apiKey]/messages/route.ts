@@ -16,6 +16,7 @@ import {
   routesToFlow,
 } from "@/lib/flow-runtime";
 import { emitChatMessageToDashboard } from "@/lib/socket-server";
+import { captureLead } from "@/lib/leads";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
 
@@ -271,6 +272,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
   for (const m of responseMessages) {
     emitChatMessageToDashboard(bot.userId, bot.id, visitorId, m);
+  }
+
+  // Lead capture runs on the conversation's final state, so it sees both what
+  // the flow just collected and anything typed into a plain chat.
+  try {
+    await captureLead({ chatbotId: bot.id, conversation, text });
+  } catch (error) {
+    console.error(`> [leads] capture failed for chatbot ${bot.id}:`, error);
   }
 
   return withCors(NextResponse.json({ conversationId: conversation.id, messages: responseMessages }));

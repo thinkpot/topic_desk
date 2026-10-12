@@ -1,0 +1,33 @@
+# Sends lead follow-up emails that have come due.
+#
+# Vercel's Hobby plan only runs cron jobs once a day (vercel.json keeps a daily
+# run as a backstop), which is too coarse for "follow up after 2 hours". This
+# calls the same endpoint every 15 minutes instead. The endpoint is idempotent,
+# so overlapping runs never double-send.
+#
+# Setup: Settings -> Secrets and variables -> Actions -> New repository secret
+#   CRON_SECRET = the same value as CRON_SECRET in Vercel
+# Until that secret exists, every run exits quietly without failing.
+
+name: Lead follow-ups
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger the follow-up sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://chatshore.vercel.app' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET repository secret is not set; skipping."
+            exit 0
+          fi
+          curl --fail-with-body -sS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/lead-follow-ups"

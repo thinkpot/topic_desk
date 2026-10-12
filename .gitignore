@@ -10,3 +10,5 @@ node_modules
 
 # Personal Claude Code overrides for this project
 .claude/settings.local.json
+.vercel
+.env*

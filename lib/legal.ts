@@ -32,7 +32,7 @@ export const LEGAL = {
   jurisdictionCountry: "India",
 
   /** Shown on every page, and used in the structured data. */
-  effectiveDate: "27 September 2026",
+  effectiveDate: "12 October 2026",
 
   /** Kept in sync with lib/plans.ts — TRIAL_DAYS and the refund window. */
   trialDays: 3,

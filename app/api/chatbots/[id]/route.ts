@@ -7,6 +7,7 @@ import { telegram } from "@/lib/telegram";
 import { verifyConnection } from "@/lib/verify-connection";
 import { registerWebhook } from "@/lib/webhook";
 import { WIDGET_THEME_KEYS, WIDGET_FONT_KEYS } from "@/lib/widget-appearance";
+import { FOLLOW_UP_DELAY_HOURS } from "@/lib/follow-up-defaults";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -38,6 +39,25 @@ const updateSchema = z.object({
   // was never sent back to the browser to begin with.
   botToken: z.string().min(20).optional(),
   groupChatId: z.string().min(1).optional(),
+  followUpEnabled: z.boolean().optional(),
+  followUpDelayHours: z
+    .number()
+    .int()
+    .refine((h) => (FOLLOW_UP_DELAY_HOURS as readonly number[]).includes(h), "Pick one of the listed delays")
+    .optional(),
+  // Blank means "use the default", stored as null so default improvements reach it.
+  followUpSubject: z
+    .string()
+    .max(200)
+    .transform((s) => s.trim() || null)
+    .nullable()
+    .optional(),
+  followUpBody: z
+    .string()
+    .max(5000)
+    .transform((s) => s.trim() || null)
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
