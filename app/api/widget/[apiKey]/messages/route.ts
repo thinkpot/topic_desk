@@ -4,10 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
-import { telegram } from "@/lib/telegram";
 import { resolveWidgetChatbot } from "@/lib/widget";
 import { FlowGraph } from "@/lib/flow-engine";
-import { handOffToHuman, runConversationTurn, needsHandoff, needsSessionRestart, restartSession } from "@/lib/flow-runtime";
+import {
+  handOffToHuman,
+  runConversationTurn,
+  needsHandoff,
+  needsSessionRestart,
+  relayVisitorMessage,
+  restartSession,
+} from "@/lib/flow-runtime";
 import { emitChatMessageToDashboard } from "@/lib/socket-server";
 
 type RouteContext = { params: Promise<{ apiKey: string }> };
@@ -252,7 +258,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date() } });
     if (!bot.dashboardChatEnabled) {
       try {
-        await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
+        conversation = await relayVisitorMessage(bot, conversation, visitorId, visitorName, text);
       } catch (error) {
         // The message is saved and shown in the widget even if the Telegram relay fails momentarily —
         // but a persistent failure (revoked token, bot removed from the group) should still show up

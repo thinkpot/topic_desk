@@ -1,7 +1,7 @@
 import type { Chatbot, Conversation } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { telegram } from "./telegram";
+import { telegram, TelegramApiError } from "./telegram";
 import { runFlow, FlowGraph, FlowInput } from "./flow-engine";
 
 function topicNameFor(visitorId: string, visitorName?: string | null): string {
@@ -55,6 +55,36 @@ export async function handOffToHuman(
   }
 
   return updated;
+}
+
+/** Telegram's answer when a topic id doesn't exist in the group — deleted, or left over from another group/bot. */
+export function isMissingTopicError(err: unknown): boolean {
+  return err instanceof TelegramApiError && /thread not found|topic_deleted/i.test(err.description);
+}
+
+/**
+ * Relays a visitor message into the conversation's topic. If the topic is
+ * gone — deleted in Telegram, or left over from before the chatbot was pointed
+ * at a different bot or group — opens a fresh one and retries once. Without
+ * this, a returning visitor (same visitorId in their browser) relays into a
+ * dead topic on every message forever, while brand-new visitors work fine.
+ */
+export async function relayVisitorMessage(
+  bot: Chatbot,
+  conversation: Conversation,
+  visitorId: string,
+  visitorName: string | null | undefined,
+  text: string
+): Promise<Conversation> {
+  try {
+    await telegram.sendMessage(bot.botToken, bot.groupChatId, text, conversation.topicId!);
+    return conversation;
+  } catch (err) {
+    if (!isMissingTopicError(err)) throw err;
+  }
+  const fresh = await handOffToHuman(bot, { ...conversation, topicId: null }, visitorId, visitorName);
+  await telegram.sendMessage(bot.botToken, bot.groupChatId, text, fresh.topicId!);
+  return fresh;
 }
 
 /**

@@ -104,6 +104,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   }
 
   const updated = await prisma.chatbot.update({ where: { id: bot.id }, data });
+
+  // Topic ids only mean something inside the group (and bot) that created
+  // them. After switching either, drop them so each conversation opens a
+  // fresh topic in the new group on its next message (see needsHandoff).
+  if (updated.botToken !== bot.botToken || updated.groupChatId !== bot.groupChatId) {
+    await prisma.conversation.updateMany({ where: { chatbotId: bot.id }, data: { topicId: null } });
+  }
   const { botToken, webhookSecret, ...safeBot } = updated;
   return NextResponse.json({ chatbot: safeBot });
 }
