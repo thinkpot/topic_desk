@@ -6,6 +6,8 @@ import { Field } from "@/components/ui/primitives";
 
 type AnyNode = Node<Record<string, unknown>>;
 
+const ANSWER_HINT = "Insert a saved answer with {name}, or {name|there} for a fallback when it\u2019s missing.";
+
 export interface FlowChoice {
   id: string;
   name: string;
@@ -48,7 +50,7 @@ export default function NodeInspector({
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {node.type === "message" && (
-          <Field label="Message text">
+          <Field label="Message text" hint={ANSWER_HINT}>
             <textarea
               className="input resize-none"
               rows={4}
@@ -61,7 +63,7 @@ export default function NodeInspector({
 
         {node.type === "question" && (
           <>
-            <Field label="Question">
+            <Field label="Question" hint={ANSWER_HINT}>
               <textarea
                 className="input resize-none"
                 rows={3}
@@ -107,6 +109,7 @@ export default function NodeInspector({
         {(node.type === "handoff" || node.type === "end") && (
           <Field
             label={node.type === "handoff" ? "Message before handoff (optional)" : "Closing message (optional)"}
+            hint={ANSWER_HINT}
           >
             <textarea
               className="input resize-none"
@@ -154,7 +157,7 @@ function ButtonsInspector({
 
   return (
     <>
-      <Field label="Prompt">
+      <Field label="Prompt" hint={ANSWER_HINT}>
         <textarea
           className="input resize-none"
           rows={3}

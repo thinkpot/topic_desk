@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runFlow, runFlows, type FlowGraph, type FlowNode, type FlowEdge } from "@/lib/flow-engine";
+import { fillVariables, runFlow, runFlows, type FlowGraph, type FlowNode, type FlowEdge } from "@/lib/flow-engine";
 
 // Tiny builder: a linear chain of nodes after Start, each connected to the next.
 function chain(...nodes: Omit<FlowNode, "position">[]): FlowGraph {
@@ -131,5 +131,43 @@ describe("runFlows — never strands a visitor", () => {
     });
     // "deleted" is skipped; main resumes after node "c" (which has no next) → ends.
     expect(r.ended).toBe(true);
+  });
+});
+
+describe("fillVariables", () => {
+  it("fills in a saved answer", () => {
+    expect(fillVariables("Thanks, {name}!", { name: "Priya" })).toBe("Thanks, Priya!");
+  });
+
+  it("uses the fallback when there's no answer", () => {
+    expect(fillVariables("Hi {name|there}", {})).toBe("Hi there");
+    expect(fillVariables("Hi {name|there}", { name: "  " })).toBe("Hi there");
+  });
+
+  it("drops a placeholder with no answer and no fallback instead of showing braces", () => {
+    expect(fillVariables("Your order {order} is noted", {})).toBe("Your order  is noted");
+  });
+
+  it("leaves text that isn't a placeholder alone", () => {
+    expect(fillVariables("Price: {10 USD} or { name }", { name: "x" })).toBe("Price: {10 USD} or { name }");
+  });
+});
+
+describe("runFlows — saved answers in bot text", () => {
+  it("fills answers collected in an earlier flow into a later message", () => {
+    const flows = {
+      main: chain(goto("g", "details"), msg("thanks", "Thanks, {name}! We'll email {email|you}.")),
+      details: chain(ask("q", "Your name?", "name")),
+    };
+    const first = start(flows);
+    const second = runFlows({
+      flows,
+      mainFlowId: "main",
+      position: first.position,
+      stack: first.stack,
+      variables: first.variables,
+      input: { text: "Priya" },
+    });
+    expect(texts(second)).toEqual(["Thanks, Priya! We'll email you."]);
   });
 });

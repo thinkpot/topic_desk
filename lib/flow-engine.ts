@@ -101,6 +101,22 @@ function evaluateCondition(actual: string | undefined, operator: ConditionOperat
   }
 }
 
+const PLACEHOLDER_RE = /\{([a-zA-Z0-9_]+)(?:\|([^{}]*))?\}/g;
+
+/**
+ * Fills saved answers into a line of bot text: {name} becomes the answer saved
+ * as "name", and {name|there} falls back to "there" when there's no answer yet.
+ * A placeholder with no answer and no fallback becomes empty rather than
+ * showing the visitor raw braces. Only names a Question can save
+ * (letters, digits, underscore) are treated as placeholders.
+ */
+export function fillVariables(text: string, variables: Record<string, string>): string {
+  return text.replace(PLACEHOLDER_RE, (_, name: string, fallback?: string) => {
+    const value = variables[name]?.trim();
+    return value ? value : (fallback ?? "").trim();
+  });
+}
+
 /** A point inside a specific flow. */
 export interface FlowPosition {
   flowId: string;
@@ -202,7 +218,7 @@ export function runFlows(params: {
         const matched = options.find((o) => o.id === input.choiceId) ?? options.find((o) => o.label === input.text);
         if (!matched) {
           // Free text instead of a tap, or a stale option id — re-ask rather than guess.
-          outgoing.push({ text: node.data.prompt ?? "", buttons: options });
+          outgoing.push({ text: fillVariables(node.data.prompt ?? "", variables), buttons: options });
           return waitAt(flowId, node.id);
         }
         currentId = nextIdFrom(flows[flowId], node.id, matched.id);
@@ -241,23 +257,23 @@ export function runFlows(params: {
     const graph = flows[flowId];
 
     if (node.type === "message") {
-      outgoing.push({ text: node.data.text ?? "" });
+      outgoing.push({ text: fillVariables(node.data.text ?? "", variables) });
       currentId = nextIdFrom(graph, node.id);
     } else if (node.type === "question") {
-      outgoing.push({ text: node.data.prompt ?? "" });
+      outgoing.push({ text: fillVariables(node.data.prompt ?? "", variables) });
       return waitAt(flowId, node.id);
     } else if (node.type === "buttons") {
-      outgoing.push({ text: node.data.prompt ?? "", buttons: node.data.options ?? [] });
+      outgoing.push({ text: fillVariables(node.data.prompt ?? "", variables), buttons: node.data.options ?? [] });
       return waitAt(flowId, node.id);
     } else if (node.type === "condition") {
       const actual = node.data.variable ? variables[node.data.variable] : undefined;
       const pass = evaluateCondition(actual, node.data.operator, node.data.value);
       currentId = nextIdFrom(graph, node.id, pass ? "true" : "false");
     } else if (node.type === "handoff") {
-      if (node.data.message) outgoing.push({ text: node.data.message });
+      if (node.data.message) outgoing.push({ text: fillVariables(node.data.message, variables) });
       return finish("handoff");
     } else if (node.type === "end") {
-      if (node.data.message) outgoing.push({ text: node.data.message });
+      if (node.data.message) outgoing.push({ text: fillVariables(node.data.message, variables) });
       // Inside a "return" sub-flow, End means "done here" — go back to the
       // caller rather than ending the whole conversation.
       if (stack.length === 0) return finish("ended");
