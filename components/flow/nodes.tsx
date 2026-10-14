@@ -1,7 +1,8 @@
 "use client";
 
+import { createContext, useContext } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import type { FlowNodeType, FlowOption, ConditionOperator } from "@/lib/flow-engine";
+import type { FlowNodeType, FlowOption, ConditionOperator, GotoFlowMode } from "@/lib/flow-engine";
 import { FLOW_PALETTE } from "@/lib/flow-node-defs";
 
 function paletteFor(type: FlowNodeType) {
@@ -138,6 +139,34 @@ export function HandoffNode({ data, selected }: NodeProps) {
   );
 }
 
+/** Flow id → name, so a Go to flow node can show its target by name. */
+export const FlowNamesContext = createContext<Record<string, string>>({});
+
+export function GotoFlowNode({ data, selected }: NodeProps) {
+  const d = data as { flowId?: string; mode?: GotoFlowMode };
+  const names = useContext(FlowNamesContext);
+  const target = d.flowId ? names[d.flowId] : undefined;
+  const returns = (d.mode ?? "return") === "return";
+  return (
+    <NodeShell type="goto_flow" title={returns ? "Run flow, then come back" : "Switch to flow"} selected={selected}>
+      <Handle type="target" position={Position.Left} />
+      {target ? (
+        <p className="font-medium text-ink">{target}</p>
+      ) : (
+        <p className="italic text-ink-3">{d.flowId ? "Flow was deleted" : "No flow picked yet"}</p>
+      )}
+      {returns ? (
+        <>
+          <p className="mt-1.5 text-[11px] text-ink-3">Continues from here when that flow finishes.</p>
+          <Handle type="source" position={Position.Right} />
+        </>
+      ) : (
+        <p className="mt-1.5 text-[11px] text-ink-3">Doesn&apos;t come back to this flow.</p>
+      )}
+    </NodeShell>
+  );
+}
+
 export function EndNode({ data, selected }: NodeProps) {
   const d = data as { message?: string };
   return (
@@ -156,4 +185,5 @@ export const nodeTypes = {
   condition: ConditionNode,
   handoff: HandoffNode,
   end: EndNode,
+  goto_flow: GotoFlowNode,
 };

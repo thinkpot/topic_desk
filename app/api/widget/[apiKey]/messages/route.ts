@@ -5,9 +5,9 @@ import { rateLimit } from "@/lib/rate-limit";
 import { withCors, corsPreflight } from "@/lib/cors";
 import { isDomainAllowed } from "@/lib/domain";
 import { resolveWidgetChatbot } from "@/lib/widget";
-import { FlowGraph } from "@/lib/flow-engine";
 import {
   handOffToHuman,
+  loadFlowSet,
   runConversationTurn,
   needsHandoff,
   needsSessionRestart,
@@ -66,18 +66,18 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   });
 
   if (!conversation) {
-    const flow = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
+    const flowSet = await loadFlowSet(bot.id);
     const monthlyCount = await prisma.conversation.count({
       where: { chatbot: { userId: bot.userId }, createdAt: { gte: startOfMonth() } },
     });
 
-    if (flow?.isEnabled && monthlyCount < bot.user.plan.maxMonthlyUsers) {
+    if (flowSet?.main.isEnabled && monthlyCount < bot.user.plan.maxMonthlyUsers) {
       conversation = await prisma.conversation.create({
         data: { chatbotId: bot.id, visitorId, flowStatus: "RUNNING" },
       });
       const { botMessages } = await runConversationTurn({
         bot,
-        graph: { nodes: flow.nodes, edges: flow.edges } as unknown as FlowGraph,
+        flowSet,
         conversation,
         visitorId,
         visitorName: null,
@@ -105,12 +105,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   // anything to get a "welcome back" out of a bot that's supposed to be
   // running. Self-limiting: this bumps lastMessageAt, so the very next poll
   // is no longer stale and this doesn't refire on every 3s tick.
-  const flowForRestart = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
-  if (needsSessionRestart({ chatbot: bot, conversation, flowEnabled: !!flowForRestart?.isEnabled })) {
+  const flowSetForRestart = await loadFlowSet(bot.id);
+  if (flowSetForRestart && needsSessionRestart({ chatbot: bot, conversation, flowEnabled: flowSetForRestart.main.isEnabled })) {
     conversation = await restartSession(bot, conversation);
     const restartResult = await runConversationTurn({
       bot,
-      graph: { nodes: flowForRestart!.nodes, edges: flowForRestart!.edges } as unknown as FlowGraph,
+      flowSet: flowSetForRestart,
       conversation,
       visitorId,
       visitorName: conversation.visitorName,
@@ -174,8 +174,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   let conversation = await prisma.conversation.findUnique({
     where: { chatbotId_visitorId: { chatbotId: bot.id, visitorId } },
   });
-  const flow = await prisma.flow.findUnique({ where: { chatbotId: bot.id } });
-  const flowActive = !!flow?.isEnabled;
+  const flowSet = await loadFlowSet(bot.id);
+  const flowActive = !!flowSet?.main.isEnabled;
 
   if (!conversation) {
     const monthlyCount = await prisma.conversation.count({
@@ -230,10 +230,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     conversation = await restartSession(bot, conversation);
   }
 
-  if (flow && routesToFlow(conversation, flowActive)) {
+  if (flowSet && routesToFlow(conversation, flowActive)) {
     const { botMessages, conversation: updated } = await runConversationTurn({
       bot,
-      graph: { nodes: flow.nodes, edges: flow.edges } as unknown as FlowGraph,
+      flowSet,
       conversation,
       visitorId,
       visitorName,

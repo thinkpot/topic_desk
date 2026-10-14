@@ -1,21 +1,33 @@
 "use client";
 
 import type { Node } from "@xyflow/react";
-import type { FlowOption, ConditionOperator } from "@/lib/flow-engine";
+import type { FlowOption, ConditionOperator, GotoFlowMode } from "@/lib/flow-engine";
 import { Field } from "@/components/ui/primitives";
 
 type AnyNode = Node<Record<string, unknown>>;
+
+export interface FlowChoice {
+  id: string;
+  name: string;
+}
 
 export default function NodeInspector({
   node,
   onChange,
   onDelete,
   onClose,
+  otherFlows,
+  onOpenFlow,
+  onCreateFlow,
 }: {
   node: AnyNode;
   onChange: (data: Record<string, unknown>) => void;
   onDelete: () => void;
   onClose: () => void;
+  /** The chatbot's flows other than the one being edited. */
+  otherFlows: FlowChoice[];
+  onOpenFlow: (flowId: string) => void;
+  onCreateFlow: () => void;
 }) {
   const data = node.data;
 
@@ -26,7 +38,9 @@ export default function NodeInspector({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
-        <h3 className="text-[14px] font-semibold capitalize">{node.type} node</h3>
+        <h3 className="text-[14px] font-semibold capitalize">
+          {node.type === "goto_flow" ? "Go to flow" : node.type} node
+        </h3>
         <button onClick={onClose} className="btn-ghost btn-sm -mr-2">
           Close
         </button>
@@ -72,6 +86,23 @@ export default function NodeInspector({
         )}
 
         {node.type === "condition" && <ConditionInspector data={data} onChange={set} />}
+
+        {node.type === "goto_flow" && (
+          <GotoFlowInspector
+            data={data}
+            onChange={set}
+            otherFlows={otherFlows}
+            onOpenFlow={onOpenFlow}
+            onCreateFlow={onCreateFlow}
+          />
+        )}
+
+        {node.type === "end" && (
+          <p className="text-[12.5px] leading-relaxed text-ink-2">
+            If this flow was started by a <strong>Run flow, then come back</strong> step, End returns there instead of
+            ending the chat.
+          </p>
+        )}
 
         {(node.type === "handoff" || node.type === "end") && (
           <Field
@@ -206,6 +237,105 @@ function ConditionInspector({
         </Field>
       )}
       <p className="text-[12.5px] text-ink-2">Connect the True and False dots on the node to different next steps.</p>
+    </>
+  );
+}
+
+function GotoFlowInspector({
+  data,
+  onChange,
+  otherFlows,
+  onOpenFlow,
+  onCreateFlow,
+}: {
+  data: Record<string, unknown>;
+  onChange: (patch: Record<string, unknown>) => void;
+  otherFlows: FlowChoice[];
+  onOpenFlow: (flowId: string) => void;
+  onCreateFlow: () => void;
+}) {
+  const flowId = (data.flowId as string) ?? "";
+  const mode = ((data.mode as GotoFlowMode) ?? "return") as GotoFlowMode;
+  const targetMissing = !!flowId && !otherFlows.some((f) => f.id === flowId);
+
+  if (otherFlows.length === 0) {
+    return (
+      <div className="space-y-3">
+        <p className="text-[13px] leading-relaxed text-ink-2">
+          This chatbot has no other flows yet. Create one — for example &ldquo;Collect contact details&rdquo; — and
+          you can run it from here.
+        </p>
+        <button onClick={onCreateFlow} className="btn-secondary btn-sm">
+          + New flow
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Field label="Flow">
+        <select className="input" value={targetMissing ? "" : flowId} onChange={(e) => onChange({ flowId: e.target.value })}>
+          <option value="" disabled>
+            Pick a flow…
+          </option>
+          {otherFlows.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      {targetMissing && <p className="text-[12.5px] text-critical">The flow this pointed at was deleted. Pick another.</p>}
+
+      <div>
+        <label className="field-label">When it gets there</label>
+        <div className="space-y-2">
+          {(
+            [
+              {
+                value: "return",
+                title: "Run it, then come back",
+                hint: "When that flow finishes, carry on from this step's connection. Use this to reuse a flow.",
+              },
+              {
+                value: "jump",
+                title: "Switch to it",
+                hint: "Carry on in that flow and don't come back here.",
+              },
+            ] as const
+          ).map((option) => (
+            <label
+              key={option.value}
+              className={`flex cursor-pointer gap-2.5 rounded-md border p-2.5 ${
+                mode === option.value ? "border-ink" : "border-line hover:border-line-strong"
+              }`}
+            >
+              <input
+                type="radio"
+                name="goto-mode"
+                className="mt-0.5"
+                checked={mode === option.value}
+                onChange={() => onChange({ mode: option.value })}
+              />
+              <span>
+                <span className="block text-[13px] font-medium">{option.title}</span>
+                <span className="block text-[12px] leading-snug text-ink-3">{option.hint}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {flowId && !targetMissing && (
+        <button onClick={() => onOpenFlow(flowId)} className="btn-ghost btn-sm -ml-2">
+          Open that flow →
+        </button>
+      )}
+      <p className="text-[12.5px] leading-relaxed text-ink-2">
+        Answers saved in one flow can be used in any other — a Condition here can check{" "}
+        <span className="font-mono">{"{name}"}</span> collected over there.
+      </p>
     </>
   );
 }

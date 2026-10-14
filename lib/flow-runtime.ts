@@ -2,7 +2,7 @@ import type { Chatbot, Conversation } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { telegram, TelegramApiError } from "./telegram";
-import { runFlow, FlowGraph, FlowInput } from "./flow-engine";
+import { runFlows, FlowFrame, FlowGraph, FlowInput } from "./flow-engine";
 
 function topicNameFor(visitorId: string, visitorName?: string | null): string {
   return `${visitorName?.trim() || "Visitor"} · ${visitorId.slice(-6)}`;
@@ -164,6 +164,8 @@ export async function restartSession(chatbot: Chatbot, conversation: Conversatio
     where: { id: conversation.id },
     data: {
       currentNodeId: null,
+      currentFlowId: null,
+      flowStack: [],
       variables: chatbot.keepVariablesAcrossSessions
         ? (conversation.variables as Prisma.InputJsonValue)
         : ({} as Prisma.InputJsonValue),
@@ -189,20 +191,48 @@ interface TurnResult {
  * conversation's flow state or hands off to a human. `input` is null only
  * when auto-starting a brand-new conversation (chat just opened).
  */
+/** Everything the engine needs about a chatbot's flows. */
+export interface FlowSet {
+  /** The main flow's row — its isEnabled switches flows on for the chatbot. */
+  main: { id: string; isEnabled: boolean };
+  flows: Record<string, FlowGraph>;
+}
+
+/**
+ * Loads all of a chatbot's flows, or null if it has none. The main flow is
+ * the one marked isMain, falling back to the oldest — a chatbot always has
+ * somewhere to start even if that flag were somehow missing.
+ */
+export async function loadFlowSet(chatbotId: string): Promise<FlowSet | null> {
+  const rows = await prisma.flow.findMany({ where: { chatbotId }, orderBy: { createdAt: "asc" } });
+  if (rows.length === 0) return null;
+  const main = rows.find((f) => f.isMain) ?? rows[0];
+  return {
+    main: { id: main.id, isEnabled: main.isEnabled },
+    flows: Object.fromEntries(
+      rows.map((f) => [f.id, { nodes: f.nodes, edges: f.edges } as unknown as FlowGraph])
+    ),
+  };
+}
+
 export async function runConversationTurn(params: {
   bot: Chatbot;
-  graph: FlowGraph;
+  flowSet: FlowSet;
   conversation: Conversation;
   visitorId: string;
   visitorName: string | null | undefined;
   input: FlowInput | null;
 }): Promise<TurnResult> {
-  const { bot, graph, visitorId, visitorName, input } = params;
+  const { bot, flowSet, visitorId, visitorName, input } = params;
   let conversation = params.conversation;
 
-  const result = runFlow({
-    graph,
-    currentNodeId: conversation.currentNodeId,
+  const result = runFlows({
+    flows: flowSet.flows,
+    mainFlowId: flowSet.main.id,
+    position: conversation.currentNodeId
+      ? { flowId: conversation.currentFlowId ?? flowSet.main.id, nodeId: conversation.currentNodeId }
+      : null,
+    stack: Array.isArray(conversation.flowStack) ? (conversation.flowStack as unknown as FlowFrame[]) : [],
     variables: (conversation.variables as Record<string, string>) ?? {},
     input,
   });
@@ -230,13 +260,15 @@ export async function runConversationTurn(params: {
     conversation = await handOffToHuman(bot, conversation, visitorId, visitorName, contextLines);
     conversation = await prisma.conversation.update({
       where: { id: conversation.id },
-      data: { variables: result.variables, currentNodeId: null },
+      data: { variables: result.variables, currentNodeId: null, currentFlowId: null, flowStack: [] },
     });
   } else {
     conversation = await prisma.conversation.update({
       where: { id: conversation.id },
       data: {
-        currentNodeId: result.nextNodeId,
+        currentNodeId: result.position?.nodeId ?? null,
+        currentFlowId: result.position?.flowId ?? null,
+        flowStack: result.stack as unknown as Prisma.InputJsonValue,
         variables: result.variables,
         flowStatus: result.ended ? "ENDED" : "RUNNING",
         lastMessageAt: new Date(),

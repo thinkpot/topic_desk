@@ -166,7 +166,7 @@ model Chatbot {
 
   conversations Conversation[]
   stats         WidgetStat[]
-  flow          Flow?
+  flows         Flow[]
   liveVisitors  LiveVisitor[]
   leads         Lead[]
 
@@ -180,13 +180,20 @@ model Chatbot {
 // structure with no real query benefit.
 model Flow {
   id        String   @id @default(cuid())
-  chatbotId String   @unique
+  chatbotId String
   chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  // Every chatbot has one main flow — where conversations start, and whose
+  // isEnabled switches flows on or off for the whole chatbot. Other flows are
+  // reached from a "Go to flow" node; their own isEnabled is ignored.
+  name      String   @default("Main")
+  isMain    Boolean  @default(false)
   nodes     Json
   edges     Json
   isEnabled Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([chatbotId])
 }
 
 model Conversation {
@@ -204,6 +211,12 @@ model Conversation {
   // fall through to creating one on the next message, same as a bot-less chat.
   flowStatus    FlowStatus         @default(NOT_STARTED)
   currentNodeId String?
+  // Which flow currentNodeId belongs to; null means the main flow (and is
+  // what every conversation from before multi-flow support has).
+  currentFlowId String?
+  // Where to come back to after a "run it, then come back" Go to flow node:
+  // [{ flowId, nodeId }], innermost last. See runFlows in lib/flow-engine.ts.
+  flowStack     Json               @default("[]")
   variables     Json               @default("{}")
   lastMessageAt DateTime           @default(now())
   createdAt     DateTime           @default(now())

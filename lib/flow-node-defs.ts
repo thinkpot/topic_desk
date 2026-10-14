@@ -15,6 +15,7 @@ export const FLOW_PALETTE: FlowPaletteEntry[] = [
   { type: "buttons", label: "Buttons", description: "Offer tappable choices", color: "#c9407e", icon: "🔘" },
   { type: "condition", label: "Condition", description: "Branch on a saved answer", color: "#8a6a00", icon: "🔀" },
   { type: "handoff", label: "Hand off", description: "Open a Telegram topic for a human", color: "#5b3fc9", icon: "🙋" },
+  { type: "goto_flow", label: "Go to flow", description: "Run another flow, or switch to it", color: "#0e7490", icon: "↪️" },
   { type: "end", label: "End", description: "Stop the flow here", color: "#6b6b6b", icon: "🏁" },
 ];
 
@@ -38,6 +39,8 @@ export function defaultDataFor(type: FlowNodeType): Record<string, unknown> {
       return { message: "Connecting you with our team…" };
     case "end":
       return { message: "" };
+    case "goto_flow":
+      return { flowId: "", mode: "return" };
     default:
       return {};
   }
